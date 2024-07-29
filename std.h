@@ -18,18 +18,6 @@ typedef struct {
   ptrdiff_t len;
 } str;
 
-#define strFromC(x) ((str){x, strlen(x)})
-
-/*
-  Return a new str, bounded by '\n' (or an arbitrary *other*
-  character).
-
-  If str doesn't contain the searched for character, the original str
-  is returned.
- */
-str strTakeLine(str src);
-str strTakeToChar(str src, char c);
-
 /*
   Assume that this structure is pointing at r/w data.
  */
@@ -39,18 +27,53 @@ typedef struct {
   ptrdiff_t cap;
 } buf;
 
+str strFromC(char *cstr);
 str strFromBuf(buf buf);
 
 /*
-  Shifts sz bytes off the front of buf.
-*/
-void bufDropBytes(buf *buf, ptrdiff_t sz);
+  Return a new str, bounded by '\n' (or an arbitrary *other*
+  character).
+
+  If src doesn't contain the searched for character, the original str
+  is returned.
+ */
+str strFirstLine(str src);
+str strTakeToChar(str src, char c);
 
 /*
-  Returns 1 if more data might exist
- */
-_Bool readToBufFromFile(buf *buf, int fd);
+  Shifts sz bytes off the front of buf.
 
-_Bool writeStrToFile(str s, int fd);
-_Bool writeBufToFile(buf b, int fd);
-_Bool writeCharToFile(char c, int fd);
+  If before the buffer looks like...
+  
+    { [A,B,C,D,_], 4, 5 }
+
+  ...and you call bufDrop(&b, 2), after it will look like...
+
+    { [C,D,_,_,_], 2, 5 }
+  
+*/
+void bufDrop(buf *buf, ptrdiff_t sz);
+
+ /*
+   Returns str w/ any data not appended, so if the returned str has
+   len == 0, you know the full input was appended.
+ */
+str bufAppendStr(buf *buf, str str);
+
+/*
+  Fills data from fd into buf, starting at buf.len (ie., it appends
+  file data to the end of the buffer).
+
+  Returns 1 if more data might exist in the file, 0 if the squeeze has
+  been squozen.
+
+  If buf's capacity and length are equal (ie., you're asking to put
+  data with no free space), behavior is undefined (ie., I haven't
+  decided what I want it to do yet).
+ */
+_Bool fdFillBuf(int fd, buf *buf);
+_Bool fdMemMap(int fd, str *s);
+
+_Bool fdFlush(int fd, buf *buf);
+_Bool fdPrintStr(int fd, buf *buf, str s);
+_Bool fdPrintChar(int fd, buf *buf, char c);

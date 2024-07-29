@@ -1,13 +1,13 @@
 #include "std.h"
 
-_Bool fdFillBuf(int fd, buf *bufp) {
+_Bool fdReadIntoBuf(int fd, buf *bufp) {
   buf b = *bufp;
   
   while (b.len < b.cap) {
     ssize_t bytes_read = read(fd, b.ptr + b.len, b.cap - b.len);
 
-    if (bytes_read == 0 && bufp->len == b.len) {
-      /* no bytes to read (eof) AND none read AT ALL this go-round */
+    if (bytes_read == 0 && b.len == 0) {
+      /* no bytes to read (eof) AND nothing for the caller to process */
       return 0;
     } else if (bytes_read == 0) {
       /*
@@ -34,6 +34,11 @@ _Bool fdMemMap(int fd, str *s) {
 }
 
 _Bool fdFlush(int fd, buf *bufp) {
+  /* nothing to flush... */
+  if (bufp == NULL || bufp->ptr == NULL || bufp->len == 0) {
+    return 1;
+  }
+  
   _Bool result = 1;
   buf b = *bufp;
   

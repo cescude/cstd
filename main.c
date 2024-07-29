@@ -3,10 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-char wdata[1<<10] = {0};
-buf wbuf = {wdata, 0, sizeof(wdata)};
-
 int main(int argc, char **argv) {
+
+  char wdata[1<<10] = {0};
+  buf wbuf = bufFromArray(wdata);
+  printer stdout = printerFromFile(1, &wbuf);
   
   for (int i=1; i<argc; i++) {
     int fd = open(argv[i], O_RDONLY);
@@ -16,15 +17,16 @@ int main(int argc, char **argv) {
     }
 
     char rdata[1<<10] = {0};
-    buf rbuf = {rdata, 0, sizeof(rdata)};
+    buf rbuf = bufFromArray(rdata);
 
-    while (fdFillBuf(fd, &rbuf) || rbuf.len) {
+    while (fdReadIntoBuf(fd, &rbuf)) {
       str line = strFirstLine(strFromBuf(rbuf));
 
       do {
-	fdPrintStr(1, &wbuf, strFromC("("));
-	fdPrintStr(1, &wbuf, line);
-	fdPrintStr(1, &wbuf, strFromC(")\n"));
+	printStr(stdout, strFromC(argv[i]));
+	printStr(stdout, strFromC(" ("));
+	printStr(stdout, line);
+	printStr(stdout, strFromC(")\n"));
 
 	if (line.len < rbuf.len) {
 	  bufDrop(&rbuf, line.len + 1);
@@ -37,9 +39,11 @@ int main(int argc, char **argv) {
       } while (line.len < rbuf.len);
     }
 
-    fdFlush(1, &wbuf);
+    printFlush(stdout);
 
     close(fd);
   }
   return 0;
 }
+
+

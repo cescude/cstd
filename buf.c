@@ -1,5 +1,13 @@
 #include "std.h"
 
+buf bufFromPtr(char *data, ptrdiff_t data_size) {
+  return (buf){data, 0, data_size};
+}
+
+void bufClear(buf *buf) {
+  buf->len = 0;
+}
+
 void bufDrop(buf *buf, ptrdiff_t sz) {
   sz = sz > buf->len ? buf->len : sz;
   sz = sz < 0 ? 0 : sz;

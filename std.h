@@ -27,8 +27,18 @@ typedef struct {
   ptrdiff_t cap;
 } buf;
 
+typedef struct {
+  int fd;
+  buf *buf;			/* NULL if unbuffered */
+} printer;
+
 str strFromC(char *cstr);
 str strFromBuf(buf buf);
+
+/*
+  Basically sets len to 0.
+ */
+void bufClear(buf *buf);
 
 /*
   Return a new str, bounded by '\n' (or an arbitrary *other*
@@ -39,6 +49,9 @@ str strFromBuf(buf buf);
  */
 str strFirstLine(str src);
 str strTakeToChar(str src, char c);
+
+#define bufFromArray(x) (bufFromPtr(x, sizeof(x)))
+buf bufFromPtr(char *data, ptrdiff_t data_size);
 
 /*
   Shifts sz bytes off the front of buf.
@@ -64,16 +77,20 @@ str bufAppendStr(buf *buf, str str);
   Fills data from fd into buf, starting at buf.len (ie., it appends
   file data to the end of the buffer).
 
-  Returns 1 if more data might exist in the file, 0 if the squeeze has
-  been squozen.
+  Returns 0 if the file is eof (or errors) and there's no data in buf.
 
   If buf's capacity and length are equal (ie., you're asking to put
   data with no free space), behavior is undefined (ie., I haven't
   decided what I want it to do yet).
  */
-_Bool fdFillBuf(int fd, buf *buf);
+_Bool fdReadIntoBuf(int fd, buf *buf);
 _Bool fdMemMap(int fd, str *s);
 
 _Bool fdFlush(int fd, buf *buf);
 _Bool fdPrintStr(int fd, buf *buf, str s);
 _Bool fdPrintChar(int fd, buf *buf, char c);
+
+printer printerFromFile(int fd, buf *buf);
+_Bool printStr(printer p, str s);
+_Bool printChar(printer p, char c);
+_Bool printFlush(printer p); 	/* flush out any internal state */

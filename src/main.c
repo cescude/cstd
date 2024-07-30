@@ -23,8 +23,8 @@ int main(int argc, char **argv) {
       str_t line = strFirstLine(strFromBuf(rbuf));
 
       do {
-	printU64(stdout, strHash_djb2(line));
-	printChar(stdout, ' ');
+	printU64F(stdout, strHash_djb2(line), (format_t){.width=20, .right=1});
+	printCharF(stdout, ' ', (format_t){.width=5});
 	printStr(stdout, strFromC(argv[i]));
 	printStr(stdout, strFromC(" ("));
 	printStr(stdout, line);
@@ -41,10 +41,14 @@ int main(int argc, char **argv) {
       } while (line.len < rbuf.len);
     }
 
-    printFlush(stdout);
-
     close(fd);
   }
+
+  printU64(stdout, 0xffffFFFFffffFFFF);
+  printChar(stdout, '\n');
+  
+  printFlush(stdout);
+
   return 0;
 }
 

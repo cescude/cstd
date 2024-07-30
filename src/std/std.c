@@ -145,29 +145,71 @@ _Bool fdPrintStr(int fd, buf_t *bufp, str_t s) {
   return 1;
 }
 
+_Bool fdPrintStrF(int fd, buf_t *buf, str_t s, format_t f) {
+  _Bool result = 1;
+  
+  if (!f.right) {
+    result = result && fdPrintStr(fd, buf, s);
+  }
+  
+  for (ptrdiff_t i=0; i < f.width - s.len; i++) {
+    result = result && fdPrintChar(fd, buf, ' ');
+  }
+  
+  if (f.right) {
+    result = result && fdPrintStr(fd, buf, s);
+  }
+
+  return result;
+}
+
 _Bool fdPrintChar(int fd, buf_t *buf, char c) {
+  return fdPrintCharF(fd, buf, c, (format_t){0});
+}
+
+_Bool fdPrintCharF(int fd, buf_t *buf, char c, format_t f) {
   str_t s = (str_t){&c, 1};
-  return fdPrintStr(fd, buf, s);
+  return fdPrintStrF(fd, buf, s, f);
+}
+
+_Bool fdPrintU64(int fd, buf_t *buf, uint64_t n) {
+  return fdPrintU64F(fd, buf, n, (format_t){0});
+}
+
+_Bool fdPrintU64F(int fd, buf_t *buf, uint64_t n, format_t f) {
+  char data[21] = {0};
+  int len = snprintf(data, sizeof(data), "%lu", n);
+  return fdPrintStrF(fd, buf, (str_t){data, len}, f);
 }
 
 print_t printerFromFile(int fd, buf_t *buf) {
   return (print_t){fd, buf};
 }
 
+_Bool printFlush(print_t p) {
+  return fdFlush(p.fd, p.buf);
+}
+
 _Bool printStr(print_t p, str_t s) {
   return fdPrintStr(p.fd, p.buf, s);
+}
+
+_Bool printStrF(print_t p, str_t s, format_t f) {
+  return fdPrintStrF(p.fd, p.buf, s, f);
 }
 
 _Bool printChar(print_t p, char c) {
   return fdPrintChar(p.fd, p.buf, c);
 }
 
-_Bool printU64(print_t p, uint64_t n) {
-  char buf[21] = {0};
-  snprintf(buf, sizeof(buf), "%lu", n);
-  return printStr(p, strFromC(buf));
+_Bool printCharF(print_t p, char c, format_t f) {
+  return fdPrintCharF(p.fd, p.buf, c, f);
 }
 
-_Bool printFlush(print_t p) {
-  return fdFlush(p.fd, p.buf);
+_Bool printU64(print_t p, uint64_t n) {
+  return printU64F(p, n, (format_t){0});
+}
+
+_Bool printU64F(print_t p, uint64_t n, format_t f) {
+  return fdPrintU64F(p.fd, p.buf, n, f);
 }

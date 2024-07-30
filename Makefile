@@ -1,19 +1,21 @@
 CFLAGS=-g3 -Wall -Wextra -Wconversion -Wdouble-promotion -Wno-unused-parameter -Wno-unused-function -Wno-sign-conversion -fsanitize=undefined -fsanitize-trap
+#CFLAGS=-O3
 
-main: main.o str.o buf.o fd.o print.o
-	gcc ${CFLAGS} main.o str.o buf.o fd.o print.o -o main
+all: cat main
 
-str.o: std.h str.c
-	gcc ${CFLAGS} -c str.c
+main: main.o std.o 
+	gcc ${CFLAGS} main.o std.o -o main
 
-buf.o: std.h buf.c
-	gcc ${CFLAGS} -c buf.c
+std.o: src/std/std.h src/std/std.c
+	gcc ${CFLAGS} -c src/std/std.c
 
-fd.o: std.h fd.c
-	gcc ${CFLAGS} -c fd.c
+main.o: src/std/std.h src/main.c
+	gcc ${CFLAGS} -c src/main.c
 
-print.o: std.h print.c
-	gcc ${CFLAGS} -c print.c
+cat: std.o src/cat.c
+	gcc ${CFLAGS} src/cat.c -o cat std.o
 
-main.o: std.h main.c
-	gcc ${CFLAGS} -c main.c
+clean:
+	rm *.o
+	rm main cat
+

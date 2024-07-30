@@ -33,6 +33,11 @@ typedef struct {
   buf_t *buf;			/* NULL if unbuffered */
 } print_t;
 
+typedef struct {
+  int width;
+  _Bool right;
+} format_t;
+
 str_t strFromC(char *cstr);
 str_t strFromBuf(buf_t buf);
 
@@ -91,10 +96,20 @@ str_t fdMemMap(int fd, str_t *s);
 
 _Bool fdFlush(int fd, buf_t *buf);
 _Bool fdPrintStr(int fd, buf_t *buf, str_t s);
+_Bool fdPrintStrF(int fd, buf_t *buf, str_t s, format_t f);
 _Bool fdPrintChar(int fd, buf_t *buf, char c);
+_Bool fdPrintCharF(int fd, buf_t *buf, char c, format_t f);
+_Bool fdPrintU64(int fd, buf_t *buf, uint64_t n);
+_Bool fdPrintU64F(int fd, buf_t *buf, uint64_t s, format_t f);
 
 print_t printerFromFile(int fd, buf_t *buf);
-_Bool printStr(print_t p, str_t s);
-_Bool printChar(print_t p, char c);
-_Bool printU64(print_t p, uint64_t n);
 _Bool printFlush(print_t p); 	/* flush out any internal state */
+_Bool printStr(print_t p, str_t s);
+_Bool printStrF(print_t p, str_t s, format_t f);
+_Bool printChar(print_t p, char c);
+_Bool printCharF(print_t p, char c, format_t f);
+_Bool printU64(print_t p, uint64_t n);
+_Bool printU64F(print_t p, uint64_t s, format_t f);
+
+
+

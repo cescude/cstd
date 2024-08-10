@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
 
       do {
 	printU64F(stdout, strHash_djb2(line), (format_t){.width=20, .right=1});
-	printCharF(stdout, ' ', (format_t){.width=5});
+	printCharF(stdout, utf8CharFromC(' '), (format_t){.width=5});
 	printStr(stdout, strFromC(argv[i]));
 	printStr(stdout, strFromC(" ("));
 	printStr(stdout, line);
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
   }
 
   printU64(stdout, 0xffffFFFFffffFFFF);
-  printChar(stdout, '\n');
+  printChar(stdout, utf8CharFromC('\n'));
   
   printFlush(stdout);
 

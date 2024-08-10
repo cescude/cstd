@@ -3,6 +3,10 @@
 #include <string.h>
 #include <sys/mman.h>
 
+ptrdiff_t strLen(str_t s) {
+  return utf8StrLen(s);
+}
+
 bool strEquals(str_t s, str_t t) {
   if (s.len != t.len) return 0;
   if (s.ptr == t.ptr) return 1;
@@ -46,6 +50,46 @@ str_t strTakeToByte(str_t src, char c) {
     }
   }
   return result;
+}
+
+str_t strSkipByte(str_t src, char c) {
+  ptrdiff_t idx = 0;
+  
+  while (idx < src.len && src.ptr[idx] == c) {
+    idx++;
+  }
+  
+  src.ptr += idx;
+  src.len -= idx;
+
+  return src;
+}
+
+str_t strTakeLineWrapped(str_t text, ptrdiff_t cols) {
+  if (strLen(text) <= cols) {
+    return text;
+  }
+
+  str_t line = text;
+  line.len = 0;
+
+  ptrdiff_t col = 0;
+  ptrdiff_t col_idx = 0;
+  while (col < cols && utf8NextChar(text, &col, &col_idx)) {
+    if (text.ptr[col_idx] == ' ') {
+      line.len = col_idx;
+    } else if (text.ptr[col_idx] == '\n') {
+      line.len = col_idx;
+      break;
+    }
+  }
+  
+  if (line.len == 0) {
+    /* a single word is more than cols wide, need to break it up! */
+    line.len = col_idx;	      /* TODO: test this case w/ utf8 chars */
+  }
+
+  return line;
 }
 
 uint64_t strHash_djb2(str_t src) {
@@ -210,7 +254,7 @@ bool fdPrintStrF(int fd, buf_t *buf, str_t s, format_t f) {
   }
   
   for (ptrdiff_t i=0; i < f.width - s.len; i++) {
-    result = result && fdPrintChar(fd, buf, ' ');
+    result = result && fdPrintStr(fd, buf, strFromC(" "));
   }
   
   if (f.right) {
@@ -220,12 +264,15 @@ bool fdPrintStrF(int fd, buf_t *buf, str_t s, format_t f) {
   return result;
 }
 
-bool fdPrintChar(int fd, buf_t *buf, char c) {
+bool fdPrintChar(int fd, buf_t *buf, utf8_char_t c) {
   return fdPrintCharF(fd, buf, c, (format_t){0});
 }
 
-bool fdPrintCharF(int fd, buf_t *buf, char c, format_t f) {
-  str_t s = (str_t){&c, 1};
+bool fdPrintCharF(int fd, buf_t *buf, utf8_char_t c, format_t f) {
+  str_t s = (str_t){
+    .ptr = c.bytes,
+    .len = utf8CharLen(c),
+  };
   return fdPrintStrF(fd, buf, s, f);
 }
 
@@ -261,11 +308,11 @@ bool printStrF(print_t p, str_t s, format_t f) {
   return fdPrintStrF(p.fd, p.buf, s, f);
 }
 
-bool printChar(print_t p, char c) {
+bool printChar(print_t p, utf8_char_t c) {
   return fdPrintChar(p.fd, p.buf, c);
 }
 
-bool printCharF(print_t p, char c, format_t f) {
+bool printCharF(print_t p, utf8_char_t c, format_t f) {
   return fdPrintCharF(p.fd, p.buf, c, f);
 }
 

@@ -2,34 +2,41 @@
 
 #include "std.h"
 
+void optSummary(opts_config_t *config, char *summary) {
+  config->summary = strFromC(summary);
+}
+
 /*
   It's up to the caller to make sure there's sufficient space in opts
   for this (not a huge deal, since program options aren't typically
   dynamically allocated structures...)
 */
 
-void optBool(opts_config_t *config, char s, char *l, bool *result) {
+void optBool(opts_config_t *config, bool *result, char s, char *l, char *d) {
   config->opts[config->num_opts++] = (opt_t){
     .short_name = utf8CharFromC(s),
     .long_name = strFromC(l),
+    .description = strFromC(d),
     .type = optbool,
     .ptr.b = result,
   };
 }
 
-void optInt(opts_config_t *config, char s, char *l, int *result) {
+void optInt(opts_config_t *config, int *result, char s, char *l, char *d) {
   config->opts[config->num_opts++] = (opt_t){
     .short_name = utf8CharFromC(s),
     .long_name = strFromC(l),
+    .description = strFromC(d),
     .type = optint,
     .ptr.i = result,
   };
 }
 
-void optStr(opts_config_t *config, char s, char *l, str_t *result) {
+void optStr(opts_config_t *config, str_t *result, char s, char *l, char *d) {
   config->opts[config->num_opts++] = (opt_t){
     .short_name = utf8CharFromC(s),
     .long_name = strFromC(l),
+    .description = strFromC(d),
     .type = optstr,
     .ptr.s = result,
   };
@@ -211,3 +218,51 @@ bool optParse(opts_config_t config, int num_args, char **args) {
   
   return 1;
 }
+
+void optPrintUsage(opts_config_t config, ptrdiff_t cols) {
+  print_t out = printerFromFile(STDOUT_FILENO, NULL);
+
+  printStr(out, config.summary);
+
+  for (ptrdiff_t idx=0; idx<config.num_opts; idx++) {
+    opt_t opt = config.opts[idx];
+
+    if (opt.type != optrest) {
+      bool has_short = opt.short_name.bytes[0];
+      bool has_long  = opt.long_name.len;
+      
+      if (has_short) {
+	printStr(out, strFromC("  -"));
+	printChar(out, opt.short_name);
+      } else {
+	printStr(out, strFromC("    "));
+      }
+
+
+      if (has_short && has_long) {
+	printStr(out, strFromC(", --"));
+      } else if (has_long) {
+	printStr(out, strFromC("  --"));
+      }
+
+      if (has_long) {
+	printStr(out, opt.long_name);
+      }
+
+      printStr(out, strFromC("\n"));
+
+      if (opt.description.len) {
+	str_t para = opt.description;
+	while (para.len) {
+	  str_t line = strTakeLineWrapped(para, cols - 10);
+	  printStr(out, strFromC("          "));
+	  printStr(out, line);
+	  printStr(out, strFromC("\n"));
+	  para = strDropBytes(para, line.len);
+	  para = strSkipByte(para, ' ');
+	}
+      }
+    }
+  }
+}
+

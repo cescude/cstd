@@ -6,6 +6,9 @@ int main(int argc, char **argv) {
   bool verbose = 0;
   int energy = 5;
   str_t filename = strFromC(".");
+  str_t text = strFromC("");
+  int columns = 80;
+  bool show_help = 0;
   ptrdiff_t rest_idx;
 
   opt_t opts[10] = {0};
@@ -13,15 +16,35 @@ int main(int argc, char **argv) {
     .opts = opts,
   };
 
-  optBool(&config, 'v', "verbose", &verbose);
-  optInt(&config, 'N', "energy", &energy);
-  optStr(&config, 'f', "filename", &filename);
+  optSummary(
+	     &config,
+	     "A command-line benchmarking tool.\n"
+	     "\n"
+	     "Usage: test_opt\n\n"
+	     );
+
+  optBool(&config, &verbose, 'v', "verbose",
+	  "Be extra loud or something when performing operations "
+	  "here, except it really doesn't do a whole lot in this "
+	  "particular example program");
+  optInt(&config, &energy, 'N', "energy", "Energy count");
+  optStr(&config, &filename, 'f', "filename",
+	 "Filename to do something to. Note that there's "
+	 "some notes about this option that make it necessary "
+	 "to show a bit more here.");
+  optStr(&config, &text, 0, "text", "Text to word-wrap");
+  optInt(&config, &columns, 'c', "columns",
+	 "Number of columns to use when printing the --text option.");
+  optBool(&config, &show_help, 'h', "help", "Display this help");
   optRest(&config, &rest_idx);
 
   if (!optParse(config, argc, argv)) {
     printf("optParse failed!\n");
-    //optPrintHelp(config, stdout, 80);
+    optPrintUsage(config, 70);
     exit(99);
+  } else if (show_help) {
+    optPrintUsage(config, 70);
+    exit(0);
   }
 
   printf("ok\n");
@@ -38,9 +61,18 @@ int main(int argc, char **argv) {
   printFlush(stdout);
 
   for (ptrdiff_t i=rest_idx; i<argc; i++) {
-    printf("-- %s ", argv[i]);
+    printf(" >> %s", argv[i]);
   }
   printf("\n");
 
+  while (text.len) {
+    str_t line = strTakeLineWrapped(text, columns);
+    printStr(stdout, strFromC("["));
+    printStr(stdout, line);
+    printStr(stdout, strFromC("]\n"));
+    text = strDropBytes(text, line.len);
+    text = strSkipByte(text, ' ');
+  }
+  
   return 0;
 }

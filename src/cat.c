@@ -3,9 +3,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+char data[1<<10];
+buf_t buffer = bufFromArray(data);
+
+void pipe_data(int fd) {
+  while (fdReadIntoBuf(fd, &buffer) && fdFlush(STDOUT_FILENO, &buffer)) {
+    /* empty */
+  }
+}
+
 int main(int argc, char **argv) {
-  char data[1<<10];
-  buf_t buffer = bufFromArray(data);
 
   for (int i=1; i<argc; i++) {
     int fd = open(argv[i], O_RDONLY);
@@ -13,10 +20,14 @@ int main(int argc, char **argv) {
       perror("");
       return 1;
     }
+    
+    pipe_data(fd);
+    
+    close(fd);
+  }
 
-    while (fdReadIntoBuf(fd, &buffer) && fdFlush(STDOUT_FILENO, &buffer)) {
-      /* empty */
-    }
+  if (argc == 1) {
+    pipe_data(STDIN_FILENO);
   }
 
   return 0;

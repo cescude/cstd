@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fcntl.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -38,8 +39,17 @@ typedef struct {
   _Bool right;
 } format_t;
 
-str_t strFromC(char *cstr);
-str_t strFromBuf(buf_t buf);
+#define strFromC(cstr)			 (str_t){cstr, strlen(cstr)}
+#define strFromBuf(buf)			 (str_t){buf.ptr, buf.len}
+#define bufFromPtr(ptr, sz)		 (buf_t){ptr, 0, sz}
+#define bufFromArray(arr)		 (buf_t){arr, 0, sizeof(arr)}
+#define printerFromFile(fd, buf)	 (print_t){fd, buf}
+
+bool strEquals(str_t s, str_t t);
+bool strStartsWith(str_t s, str_t prefix);
+
+str_t strDropBytes(str_t s, ptrdiff_t count);
+str_t strDropChars(str_t s, ptrdiff_t count);
 
 /*
   Return a new str, bounded by '\n' (or an arbitrary *other*
@@ -49,12 +59,11 @@ str_t strFromBuf(buf_t buf);
   is returned.
  */
 str_t strFirstLine(str_t src);
-str_t strTakeToChar(str_t src, char c);
+str_t strTakeToByte(str_t src, char c);
 
 uint64_t strHash_djb2(str_t src);
 
-#define bufFromArray(x) (bufFromPtr(x, sizeof(x)))
-buf_t bufFromPtr(char *data, ptrdiff_t data_size);
+bool strMaybeParseInt(str_t s, int *result);
 
 /*
   Basically just sets len to 0.
@@ -76,8 +85,8 @@ void bufClear(buf_t *buf);
 void bufDrop(buf_t *buf, ptrdiff_t sz);
 
  /*
-   Returns str_t w/ any data not appended, so if the returned str_t has
-   len == 0, you know the full input was appended.
+   Returns str w/ any data not appended, so if the returned str has
+   len == 0, you know the full input is in buf.
  */
 str_t bufAppendStr(buf_t *buf, str_t str);
 
@@ -92,7 +101,7 @@ str_t bufAppendStr(buf_t *buf, str_t str);
   decided what I want it to do yet).
  */
 _Bool fdReadIntoBuf(int fd, buf_t *buf);
-str_t fdMemMap(int fd, str_t *s);
+str_t fdMemMap(int fd);
 
 _Bool fdFlush(int fd, buf_t *buf);
 _Bool fdPrintStr(int fd, buf_t *buf, str_t s);
@@ -102,7 +111,6 @@ _Bool fdPrintCharF(int fd, buf_t *buf, char c, format_t f);
 _Bool fdPrintU64(int fd, buf_t *buf, uint64_t n);
 _Bool fdPrintU64F(int fd, buf_t *buf, uint64_t s, format_t f);
 
-print_t printerFromFile(int fd, buf_t *buf);
 _Bool printFlush(print_t p); 	/* flush out any internal state */
 _Bool printStr(print_t p, str_t s);
 _Bool printStrF(print_t p, str_t s, format_t f);
@@ -111,5 +119,5 @@ _Bool printCharF(print_t p, char c, format_t f);
 _Bool printU64(print_t p, uint64_t n);
 _Bool printU64F(print_t p, uint64_t s, format_t f);
 
-
-
+#include "opt.h"
+#include "utf8.h"

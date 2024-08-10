@@ -1,18 +1,40 @@
 #include "std.h"
 
-str_t strFromC(char *cstr) {
-  return (str_t){cstr, strlen(cstr)};
+#include <string.h>
+#include <sys/mman.h>
+
+bool strEquals(str_t s, str_t t) {
+  if (s.len != t.len) return 0;
+  if (s.ptr == t.ptr) return 1;
+
+  ptrdiff_t min_sz = s.len < t.len ? s.len : t.len;
+  return memcmp(s.ptr, t.ptr, min_sz) == 0;
 }
 
-str_t strFromBuf(buf_t buf) {
-  return (str_t){buf.ptr, buf.len};
+bool strStartsWith(str_t s, str_t prefix) {
+  if (s.len < prefix.len) return 0;
+  
+  s.len = prefix.len;
+  return strEquals(s, prefix);
+}
+
+// TODO tests
+str_t strDropBytes(str_t s, ptrdiff_t count) {
+  ptrdiff_t min_sz = count < s.len ? count : s.len;
+  s.len -= min_sz;
+  s.ptr += min_sz;
+  return s;
+}
+
+str_t strDropChars(str_t s, ptrdiff_t count) {
+  return utf8DropChars(s, count);
 }
 
 str_t strFirstLine(str_t src) {
-  return strTakeToChar(src, '\n');
+  return strTakeToByte(src, '\n');
 }
 
-str_t strTakeToChar(str_t src, char c) {
+str_t strTakeToByte(str_t src, char c) {
   str_t result = src;
   for (result.len = 0; result.len < src.len; result.len++) {
     if (src.ptr[result.len] == c) {
@@ -31,8 +53,39 @@ uint64_t strHash_djb2(str_t src) {
   return hash;
 }
 
-buf_t bufFromPtr(char *data, ptrdiff_t data_size) {
-  return (buf_t){data, 0, data_size};
+// TODO tests
+bool strMaybeParseInt(str_t s, int *result) {
+  bool negative = 0;
+  
+  if (s.len == 0) return 0;
+
+  if (s.ptr[0] == '-') {
+    negative = 1;
+
+    s.ptr++;
+    s.len--;
+
+    /* can't have just "-", need at least "-N" */
+    if (s.len == 0) return 0;
+  }
+
+  int tmp = 0;
+  for (ptrdiff_t i=0; i<s.len; i++) {
+
+    if (s.ptr[i] < '0' || s.ptr[i] > '9') {
+      return 0;
+    }
+    
+    tmp *= 10;
+    tmp += s.ptr[i] - '0';
+
+    if (tmp < 0) {
+      return 0;			/* overflow :^( */
+    }
+  }
+
+  *result = negative ? -tmp : tmp;
+  return 1;
 }
 
 void bufClear(buf_t *buf) {
@@ -91,7 +144,7 @@ _Bool fdReadIntoBuf(int fd, buf_t *bufp) {
   return 1;
 }
 
-str_t fdMemMap(int fd, str_t *s) {
+str_t fdMemMap(int fd) {
   /* TODO */
   return (str_t){NULL, 0};
 }
@@ -180,10 +233,6 @@ _Bool fdPrintU64F(int fd, buf_t *buf, uint64_t n, format_t f) {
   char data[21] = {0};
   int len = snprintf(data, sizeof(data), "%lu", n);
   return fdPrintStrF(fd, buf, (str_t){data, len}, f);
-}
-
-print_t printerFromFile(int fd, buf_t *buf) {
-  return (print_t){fd, buf};
 }
 
 _Bool printFlush(print_t p) {

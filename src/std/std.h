@@ -20,6 +20,11 @@ typedef struct {
   ptrdiff_t len;
 } str_t;
 
+/* For working with utf8 characters */
+typedef struct {
+  char bytes[4];
+} utf8_char_t;
+
 /*
   Assume that this structure is pointing at r/w data, that it doesn't own.
  */
@@ -36,7 +41,7 @@ typedef struct {
 
 typedef struct {
   int width;
-  _Bool right;
+  bool right;
 } format_t;
 
 #define strFromC(cstr)			 (str_t){cstr, strlen(cstr)}
@@ -51,6 +56,8 @@ bool strStartsWith(str_t s, str_t prefix);
 str_t strDropBytes(str_t s, ptrdiff_t count);
 str_t strDropChars(str_t s, ptrdiff_t count);
 
+utf8_char_t strFirstChar(str_t s);
+
 /*
   Return a new str, bounded by '\n' (or an arbitrary *other*
   character).
@@ -60,6 +67,7 @@ str_t strDropChars(str_t s, ptrdiff_t count);
  */
 str_t strFirstLine(str_t src);
 str_t strTakeToByte(str_t src, char c);
+str_t strTakeToChar(str_t src, utf8_char_t c);
 
 uint64_t strHash_djb2(str_t src);
 
@@ -100,24 +108,28 @@ str_t bufAppendStr(buf_t *buf, str_t str);
   data with no free space), behavior is undefined (ie., I haven't
   decided what I want it to do yet).
  */
-_Bool fdReadIntoBuf(int fd, buf_t *buf);
+bool fdReadIntoBuf(int fd, buf_t *buf);
 str_t fdMemMap(int fd);
 
-_Bool fdFlush(int fd, buf_t *buf);
-_Bool fdPrintStr(int fd, buf_t *buf, str_t s);
-_Bool fdPrintStrF(int fd, buf_t *buf, str_t s, format_t f);
-_Bool fdPrintChar(int fd, buf_t *buf, char c);
-_Bool fdPrintCharF(int fd, buf_t *buf, char c, format_t f);
-_Bool fdPrintU64(int fd, buf_t *buf, uint64_t n);
-_Bool fdPrintU64F(int fd, buf_t *buf, uint64_t s, format_t f);
+bool fdFlush(int fd, buf_t *buf);
+bool fdPrintStr(int fd, buf_t *buf, str_t s);
+bool fdPrintStrF(int fd, buf_t *buf, str_t s, format_t f);
+bool fdPrintChar(int fd, buf_t *buf, char c);
+bool fdPrintCharF(int fd, buf_t *buf, char c, format_t f);
+bool fdPrintU64(int fd, buf_t *buf, uint64_t n);
+bool fdPrintU64F(int fd, buf_t *buf, uint64_t s, format_t f);
+bool fdPrintI64(int fd, buf_t *buf, int64_t n);
+bool fdPrintI64F(int fd, buf_t *buf, int64_t s, format_t f);
 
-_Bool printFlush(print_t p); 	/* flush out any internal state */
-_Bool printStr(print_t p, str_t s);
-_Bool printStrF(print_t p, str_t s, format_t f);
-_Bool printChar(print_t p, char c);
-_Bool printCharF(print_t p, char c, format_t f);
-_Bool printU64(print_t p, uint64_t n);
-_Bool printU64F(print_t p, uint64_t s, format_t f);
+bool printFlush(print_t p); 	/* flush out any internal state */
+bool printStr(print_t p, str_t s);
+bool printStrF(print_t p, str_t s, format_t f);
+bool printChar(print_t p, char c);
+bool printCharF(print_t p, char c, format_t f);
+bool printU64(print_t p, uint64_t n);
+bool printU64F(print_t p, uint64_t s, format_t f);
+bool printI64(print_t p, int64_t n);
+bool printI64F(print_t p, int64_t s, format_t f);
 
 #include "opt.h"
 #include "utf8.h"

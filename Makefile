@@ -15,13 +15,13 @@ utf8.o: src/std/std.h src/std/utf8.h src/std/utf8.c
 std.o: src/std/std.h src/std/std.c
 	gcc ${CFLAGS} -c src/std/std.c
 
-main: main.o std.o 
+main: libstd.a main.o
 	gcc ${CFLAGS} main.o -L. -lstd -o main
 
 main.o: src/std/std.h src/main.c
 	gcc ${CFLAGS} -c src/main.c
 
-cat: std.o src/cat.c
+cat: libstd.a src/cat.c
 	gcc ${CFLAGS} src/cat.c -L. -lstd -o cat
 
 test_opt.o: libstd.a src/test_opt.c

@@ -19,7 +19,8 @@ int main(int argc, char **argv) {
   optRest(&config, &rest_idx);
 
   if (!optParse(config, argc, argv)) {
-    printf("optPrintHelp(config, stdout, 80)\n");
+    printf("optParse failed!\n");
+    //optPrintHelp(config, stdout, 80);
     exit(99);
   }
 
@@ -29,7 +30,7 @@ int main(int argc, char **argv) {
   printStr(stdout, strFromC("verbose="));
   printU64(stdout, (uint64_t)verbose);
   printStr(stdout, strFromC(", energy="));
-  printU64(stdout, energy);
+  printI64(stdout, energy);
   printStr(stdout, strFromC(", filename="));
   printStr(stdout, filename);
   printStr(stdout, strFromC(", rest_idx="));

@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 typedef struct {
-  char short_name;
+  utf8_char_t short_name;
   str_t long_name;
   enum { optbool, optint, optstr, optrest } type;
   union {

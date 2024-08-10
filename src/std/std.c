@@ -30,6 +30,10 @@ str_t strDropChars(str_t s, ptrdiff_t count) {
   return utf8DropChars(s, count);
 }
 
+utf8_char_t strFirstChar(str_t s) {
+  return utf8FirstChar(s);
+}
+
 str_t strFirstLine(str_t src) {
   return strTakeToByte(src, '\n');
 }
@@ -116,7 +120,7 @@ str_t bufAppendStr(buf_t *bufp, str_t str) {
   return str;
 }
 
-_Bool fdReadIntoBuf(int fd, buf_t *bufp) {
+bool fdReadIntoBuf(int fd, buf_t *bufp) {
   buf_t b = *bufp;
   
   while (b.len < b.cap) {
@@ -149,13 +153,13 @@ str_t fdMemMap(int fd) {
   return (str_t){NULL, 0};
 }
 
-_Bool fdFlush(int fd, buf_t *bufp) {
+bool fdFlush(int fd, buf_t *bufp) {
   /* nothing to flush... */
   if (bufp == NULL || bufp->ptr == NULL || bufp->len == 0) {
     return 1;
   }
   
-  _Bool result = 1;
+  bool result = 1;
   buf_t b = *bufp;
   
   while (b.len > 0) {
@@ -174,7 +178,7 @@ _Bool fdFlush(int fd, buf_t *bufp) {
   return result;
 }
 
-_Bool fdPrintStr(int fd, buf_t *bufp, str_t s) {
+bool fdPrintStr(int fd, buf_t *bufp, str_t s) {
 
   /* conditions for an unbuffered, direct write */
   if (bufp == NULL || bufp->ptr == NULL || bufp->cap == 0) {
@@ -198,8 +202,8 @@ _Bool fdPrintStr(int fd, buf_t *bufp, str_t s) {
   return 1;
 }
 
-_Bool fdPrintStrF(int fd, buf_t *buf, str_t s, format_t f) {
-  _Bool result = 1;
+bool fdPrintStrF(int fd, buf_t *buf, str_t s, format_t f) {
+  bool result = 1;
   
   if (!f.right) {
     result = result && fdPrintStr(fd, buf, s);
@@ -216,49 +220,67 @@ _Bool fdPrintStrF(int fd, buf_t *buf, str_t s, format_t f) {
   return result;
 }
 
-_Bool fdPrintChar(int fd, buf_t *buf, char c) {
+bool fdPrintChar(int fd, buf_t *buf, char c) {
   return fdPrintCharF(fd, buf, c, (format_t){0});
 }
 
-_Bool fdPrintCharF(int fd, buf_t *buf, char c, format_t f) {
+bool fdPrintCharF(int fd, buf_t *buf, char c, format_t f) {
   str_t s = (str_t){&c, 1};
   return fdPrintStrF(fd, buf, s, f);
 }
 
-_Bool fdPrintU64(int fd, buf_t *buf, uint64_t n) {
+bool fdPrintU64(int fd, buf_t *buf, uint64_t n) {
   return fdPrintU64F(fd, buf, n, (format_t){0});
 }
 
-_Bool fdPrintU64F(int fd, buf_t *buf, uint64_t n, format_t f) {
+bool fdPrintU64F(int fd, buf_t *buf, uint64_t n, format_t f) {
   char data[21] = {0};
   int len = snprintf(data, sizeof(data), "%lu", n);
   return fdPrintStrF(fd, buf, (str_t){data, len}, f);
 }
 
-_Bool printFlush(print_t p) {
+bool fdPrintI64(int fd, buf_t *buf, int64_t n) {
+  return fdPrintI64F(fd, buf, n, (format_t){0});
+}
+
+bool fdPrintI64F(int fd, buf_t *buf, int64_t n, format_t f) {
+  char data[21] = {0};
+  int len = snprintf(data, sizeof(data), "%ld", n);
+  return fdPrintStrF(fd, buf, (str_t){data, len}, f);
+}
+
+bool printFlush(print_t p) {
   return fdFlush(p.fd, p.buf);
 }
 
-_Bool printStr(print_t p, str_t s) {
+bool printStr(print_t p, str_t s) {
   return fdPrintStr(p.fd, p.buf, s);
 }
 
-_Bool printStrF(print_t p, str_t s, format_t f) {
+bool printStrF(print_t p, str_t s, format_t f) {
   return fdPrintStrF(p.fd, p.buf, s, f);
 }
 
-_Bool printChar(print_t p, char c) {
+bool printChar(print_t p, char c) {
   return fdPrintChar(p.fd, p.buf, c);
 }
 
-_Bool printCharF(print_t p, char c, format_t f) {
+bool printCharF(print_t p, char c, format_t f) {
   return fdPrintCharF(p.fd, p.buf, c, f);
 }
 
-_Bool printU64(print_t p, uint64_t n) {
+bool printU64(print_t p, uint64_t n) {
   return printU64F(p, n, (format_t){0});
 }
 
-_Bool printU64F(print_t p, uint64_t n, format_t f) {
+bool printU64F(print_t p, uint64_t n, format_t f) {
   return fdPrintU64F(p.fd, p.buf, n, f);
+}
+
+bool printI64(print_t p, int64_t n) {
+  return printI64F(p, n, (format_t){0});
+}
+
+bool printI64F(print_t p, int64_t n, format_t f) {
+  return fdPrintI64F(p.fd, p.buf, n, f);
 }

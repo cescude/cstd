@@ -2,6 +2,12 @@
 
 #include "std.h"
 
+utf8_char_t utf8CharFromC(char c) {
+  return (utf8_char_t){
+    .bytes = { c, 0, 0, 0 }
+  };
+}
+
 // NOTE: write tests
 str_t utf8DropChars(str_t s, ptrdiff_t count) {
   ptrdiff_t idx = 0;
@@ -38,3 +44,29 @@ ptrdiff_t utf8BytesNeeded(char head) {
   /* Unsure what we were passed here :grimace: */
   abort();
 }
+
+utf8_char_t utf8FirstChar(str_t s) {
+  utf8_char_t result = {0};
+  if (s.len < 1) {
+    return result;
+  }
+  memmove(result.bytes, s.ptr, utf8BytesNeeded(s.ptr[0]));
+  return result;
+}
+
+utf8_char_t utf8CharAt(str_t s, ptrdiff_t index) {
+  s = utf8DropChars(s, index);
+  return utf8FirstChar(s);
+}
+
+bool utf8CharEquals(utf8_char_t a, utf8_char_t b) {
+  ptrdiff_t sz = utf8BytesNeeded(a.bytes[0]);
+  for (ptrdiff_t i=0; i<sz; i++) {
+    if (a.bytes[i] != b.bytes[i]) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+/* ptrdiff_t utf8Length(str_t s); */

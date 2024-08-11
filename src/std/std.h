@@ -7,6 +7,8 @@
 #include <string.h>
 #include <unistd.h>
 
+typedef ptrdiff_t size;
+
 /*
   Assume the str_t struct *doesn't* own its memory, ie., it's really a
   slice into something else (so we can narrow ptr/len without causing
@@ -21,9 +23,7 @@ typedef struct {
 } str_t;
 
 /* For working with utf8 characters */
-typedef struct {
-  char bytes[4];
-} utf8_char_t;
+typedef uint32_t utf8_char_t;
 
 /*
   Assume that this structure is pointing at r/w data, that it doesn't own.
@@ -44,13 +44,12 @@ typedef struct {
   bool right;
 } format_t;
 
-#define strFromC(cstr)			 (str_t){cstr, strlen(cstr)}
-#define strFromBuf(buf)			 (str_t){buf.ptr, buf.len}
-#define bufFromPtr(ptr, sz)		 (buf_t){ptr, 0, sz}
-#define bufFromArray(arr)		 (buf_t){arr, 0, sizeof(arr)}
-#define printerFromFile(fd, buf)	 (print_t){fd, buf}
-
-str_t strFromChar(utf8_char_t ch);
+#define strC(const_cstr)              (str_t){const_cstr, sizeof(const_cstr)-1}
+#define strFromC(cstr)                (str_t){cstr, strlen(cstr)}
+#define strFromBuf(buf)		      (str_t){buf.ptr, buf.len}
+#define bufFromPtr(ptr, sz)	      (buf_t){ptr, 0, sz}
+#define bufFromArray(arr)	      (buf_t){arr, 0, sizeof(arr)}
+#define printerFromFile(fd, buf)      (print_t){fd, buf}
 
 bool strEquals(str_t s, str_t t);
 bool strStartsWith(str_t s, str_t prefix);
@@ -73,6 +72,9 @@ str_t strTakeToChar(str_t src, utf8_char_t c);
 
 str_t strSkipByte(str_t src, char c);
 
+str_t strTrim(str_t haystack, str_t needles);
+str_t strTrimLeft(str_t haystack, str_t needles);
+str_t strTrimRight(str_t haystack, str_t needles);
 str_t strTakeLineWrapped(str_t text, ptrdiff_t cols);
 
 uint64_t strHash_djb2(str_t src);

@@ -1,36 +1,40 @@
 CFLAGS=-g3 -Wall -Wextra -Wconversion -Wdouble-promotion -Wno-unused-parameter -Wno-unused-function -Wno-sign-conversion -fsanitize=undefined -fsanitize-trap
 #CFLAGS=-O3
 
-all: cat main test_opt
+all: TAGS dist/opt_demo dist/main dist/cat
 
-libstd.a: std.o opt.o utf8.o
-	ar rcs libstd.a std.o opt.o utf8.o
+TAGS: src/*.c src/*.h src/std/*.c src/std/*.h
+	find src -type f -name '*.[ch]' | etags -
 
-opt.o: src/std/std.h src/std/opt.h src/std/opt.c
-	gcc ${CFLAGS} -c src/std/opt.c
+dist/libstd.a: dist dist/std.o dist/opt.o dist/utf8.o
+	cd dist && ar rcs libstd.a std.o opt.o utf8.o
 
-utf8.o: src/std/std.h src/std/utf8.h src/std/utf8.c
-	gcc ${CFLAGS} -c src/std/utf8.c
+dist/opt.o: dist src/std/std.h src/std/opt.h src/std/opt.c
+	gcc ${CFLAGS} -c src/std/opt.c -o dist/opt.o
 
-std.o: src/std/std.h src/std/std.c
-	gcc ${CFLAGS} -c src/std/std.c
+dist/utf8.o: dist src/std/std.h src/std/utf8.h src/std/utf8.c
+	gcc ${CFLAGS} -c src/std/utf8.c -o dist/utf8.o
 
-main: libstd.a main.o
-	gcc ${CFLAGS} main.o -L. -lstd -o main
+dist/std.o: dist src/std/std.h src/std/std.c
+	gcc ${CFLAGS} -c src/std/std.c -o dist/std.o
 
-main.o: src/std/std.h src/main.c
-	gcc ${CFLAGS} -c src/main.c
+dist/main: dist dist/libstd.a dist/main.o
+	gcc ${CFLAGS} dist/main.o -Ldist -lstd -o dist/main
 
-cat: libstd.a src/cat.c
-	gcc ${CFLAGS} src/cat.c -L. -lstd -o cat
+dist/main.o: dist src/std/std.h src/main.c
+	gcc ${CFLAGS} -c src/main.c -o dist/main.o
 
-test_opt.o: libstd.a src/test_opt.c
-	gcc ${CFLAGS} src/test_opt.c -c
+dist/cat: dist dist/libstd.a src/cat.c
+	gcc ${CFLAGS} src/cat.c -Ldist -lstd -o dist/cat
 
-test_opt: libstd.a test_opt.o
-	gcc ${CFLAGS} test_opt.o -L. -lstd -o test_opt
+dist/opt_demo.o: dist dist/libstd.a src/opt_demo.c
+	gcc ${CFLAGS} src/opt_demo.c -c -o dist/opt_demo.o
+
+dist/opt_demo: dist dist/libstd.a dist/opt_demo.o
+	gcc ${CFLAGS} dist/opt_demo.o -Ldist -lstd -o dist/opt_demo
 
 clean:
-	rm *.o
-	rm main cat test_opt
+	rm -rf dist
 
+dist:
+	mkdir dist

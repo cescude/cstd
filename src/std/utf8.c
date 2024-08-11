@@ -2,10 +2,16 @@
 
 #include "std.h"
 
+typedef union {
+  uint32_t value;
+  char bytes[4];
+} packable_char_t;
+
 utf8_char_t utf8CharFromC(char c) {
-  return (utf8_char_t){
-    .bytes = { c, 0, 0, 0 }
+  packable_char_t ch = {
+    .bytes = {c, 0, 0, 0},
   };
+  return (utf8_char_t)ch.value;
 }
 
 // NOTE: write tests
@@ -29,7 +35,8 @@ str_t utf8DropChars(str_t s, ptrdiff_t count) {
 }
 
 ptrdiff_t utf8CharLen(utf8_char_t ch) {
-  return utf8BytesNeeded(ch.bytes[0]);
+  packable_char_t p = { .value = ch };
+  return utf8BytesNeeded(p.bytes[0]);
 }
 
 ptrdiff_t utf8StrLen(str_t s) {
@@ -63,7 +70,11 @@ bool utf8NextChar(str_t s, ptrdiff_t *ch_idx, ptrdiff_t *idx) {
 
   if (i < s.len) {
     *idx = i;
-    *ch_idx += 1;
+
+    if (ch_idx != NULL) {
+      *ch_idx += 1;
+    }
+    
     return 1;
   }
 
@@ -72,12 +83,13 @@ bool utf8NextChar(str_t s, ptrdiff_t *ch_idx, ptrdiff_t *idx) {
 }
 
 utf8_char_t utf8FirstChar(str_t s) {
-  utf8_char_t result = {0};
   if (s.len < 1) {
-    return result;
+    return 0;
   }
+  
+  packable_char_t result = {0};
   memmove(result.bytes, s.ptr, utf8BytesNeeded(s.ptr[0]));
-  return result;
+  return result.value;
 }
 
 utf8_char_t utf8CharAt(str_t s, ptrdiff_t index) {
@@ -86,13 +98,13 @@ utf8_char_t utf8CharAt(str_t s, ptrdiff_t index) {
 }
 
 bool utf8CharEquals(utf8_char_t a, utf8_char_t b) {
-  ptrdiff_t sz = utf8BytesNeeded(a.bytes[0]);
-  for (ptrdiff_t i=0; i<sz; i++) {
-    if (a.bytes[i] != b.bytes[i]) {
-      return 0;
-    }
-  }
-  return 1;
+  ptrdiff_t sz_a = utf8CharLen(a);
+  ptrdiff_t sz_b = utf8CharLen(b);
+
+  if (sz_a != sz_b) return 0;
+
+  packable_char_t pa = { .value = a };
+  packable_char_t pb = { .value = b };
+  return memcmp(pa.bytes, pb.bytes, sz_a) == 0;
 }
 
-/* ptrdiff_t utf8Length(str_t s); */

@@ -38,6 +38,29 @@ utf8_char_t strFirstChar(str_t s) {
   return utf8FirstChar(s);
 }
 
+ptrdiff_t strCharByteIndex(str_t s, utf8_char_t ch) {
+  ptrdiff_t idx = 0;
+  do {
+    utf8_char_t a = strFirstChar(s);
+    if (utf8CharEquals(ch, a)) {
+      return idx;
+    }
+  } while (utf8NextChar(s, NULL, &idx));
+  return s.len;
+}
+
+ptrdiff_t strCharIndex(str_t s, utf8_char_t ch) {
+  ptrdiff_t ch_idx = 0;
+  ptrdiff_t idx = 0;
+  do {
+    utf8_char_t a = strFirstChar(s);
+    if (utf8CharEquals(ch, a)) {
+      return ch_idx;
+    }
+  } while (utf8NextChar(s, &ch_idx, &idx));
+  return ch_idx;
+}
+
 str_t strFirstLine(str_t src) {
   return strTakeToByte(src, '\n');
 }
@@ -49,6 +72,71 @@ str_t strTakeToByte(str_t src, char c) {
       break;
     }
   }
+  return result;
+}
+
+str_t strTrim(str_t src, str_t needles) {
+  return strTrimRight(strTrimLeft(src, needles), needles);
+}
+
+str_t strTrimLeft(str_t src, str_t needles) {
+
+  for (size i=0; i<src.len;) {
+    ptrdiff_t char_width = utf8BytesNeeded(src.ptr[i]);
+
+    bool found_char = 0;
+
+    for (size j=0; j <= needles.len - char_width;) {
+      if (memcmp(src.ptr + i, needles.ptr + j, char_width) == 0) {
+	found_char = 1;
+	break;
+      }
+
+      j += utf8BytesNeeded(needles.ptr[j]);
+    }
+    
+    if (!found_char) {
+      src.ptr += i;
+      src.len -= i;
+      return src;
+    }
+
+    i += char_width;
+  }
+
+  src.ptr += src.len;
+  src.len = 0;
+
+  return src;
+}
+
+str_t strTrimRight(str_t src, str_t needles) {
+
+  str_t result = src;
+  result.len = 0;	   /* assume we've trimmed the whole string */
+  
+  for (size i=0; i<src.len;) {
+    ptrdiff_t char_width = utf8BytesNeeded(src.ptr[i]);
+
+    bool found_char = 0;
+
+    for (size j=0; j <= needles.len - char_width;) {
+      if (memcmp(src.ptr + i, needles.ptr + j, char_width) == 0) {
+	found_char = 1;
+	break;
+      }
+
+      j += utf8BytesNeeded(needles.ptr[j]);
+    }
+    
+    i += char_width;
+    
+    if (!found_char) {
+      /* this character isn't in needles, so extend our result */
+      result.len = i;
+    }
+  }
+
   return result;
 }
 
@@ -270,7 +358,7 @@ bool fdPrintChar(int fd, buf_t *buf, utf8_char_t c) {
 
 bool fdPrintCharF(int fd, buf_t *buf, utf8_char_t c, format_t f) {
   str_t s = (str_t){
-    .ptr = c.bytes,
+    .ptr = (char*)(&c),
     .len = utf8CharLen(c),
   };
   return fdPrintStrF(fd, buf, s, f);

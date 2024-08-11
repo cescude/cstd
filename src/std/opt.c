@@ -12,31 +12,33 @@ void optSummary(opts_config_t *config, char *summary) {
   dynamically allocated structures...)
 */
 
-void optBool(opts_config_t *config, bool *result, char s, char *l, char *d) {
+void optBool(opts_config_t *config, bool *result, char s, char *l, char *desc) {
   config->opts[config->num_opts++] = (opt_t){
     .short_name = utf8CharFromC(s),
-    .long_name = strFromC(l),
-    .description = strFromC(d),
+    .long_name = l ? strFromC(l) : (str_t){0},
+    .description = strFromC(desc),
     .type = optbool,
     .ptr.b = result,
   };
 }
 
-void optInt(opts_config_t *config, int *result, char s, char *l, char *d) {
+void optInt(opts_config_t *config, int *result, char s, char *l, char *arg_label, char *desc) {
   config->opts[config->num_opts++] = (opt_t){
     .short_name = utf8CharFromC(s),
-    .long_name = strFromC(l),
-    .description = strFromC(d),
+    .long_name = l ? strFromC(l) : (str_t){0},
+    .arg_label = strFromC(arg_label),
+    .description = strFromC(desc),
     .type = optint,
     .ptr.i = result,
   };
 }
 
-void optStr(opts_config_t *config, str_t *result, char s, char *l, char *d) {
+void optStr(opts_config_t *config, str_t *result, char s, char *l, char *arg_label, char *desc) {
   config->opts[config->num_opts++] = (opt_t){
     .short_name = utf8CharFromC(s),
-    .long_name = strFromC(l),
-    .description = strFromC(d),
+    .long_name = l ? strFromC(l) : (str_t){0},
+    .arg_label = strFromC(arg_label),
+    .description = strFromC(desc),
     .type = optstr,
     .ptr.s = result,
   };
@@ -219,16 +221,33 @@ bool optParse(opts_config_t config, int num_args, char **args) {
   return 1;
 }
 
+void printWrappedParagraph(print_t p, str_t prefix, ptrdiff_t cols, str_t para) {
+  while (para.len) {
+    str_t line = strTakeLineWrapped(para, cols - 10);
+    printStr(p, prefix);
+    printStr(p, strTrim(line, strC(" \n")));
+    printStr(p, strFromC("\n"));
+    para = strDropBytes(para, line.len);
+    para = strTrimLeft(para, strC(" "));
+  }
+}
+
 void optPrintUsage(opts_config_t config, ptrdiff_t cols) {
   print_t out = printerFromFile(STDOUT_FILENO, NULL);
 
-  printStr(out, config.summary);
+  if (config.summary.len) {
+    printWrappedParagraph(out, (str_t){0}, cols, config.summary);
+  }
+
+  if (config.num_opts) {
+    printStr(out, strFromC("Options:\n"));
+  }
 
   for (ptrdiff_t idx=0; idx<config.num_opts; idx++) {
     opt_t opt = config.opts[idx];
 
     if (opt.type != optrest) {
-      bool has_short = opt.short_name.bytes[0];
+      bool has_short = opt.short_name;
       bool has_long  = opt.long_name.len;
       
       if (has_short) {
@@ -249,18 +268,20 @@ void optPrintUsage(opts_config_t config, ptrdiff_t cols) {
 	printStr(out, opt.long_name);
       }
 
+      if ((has_short || has_long) && opt.arg_label.len) {
+	printStr(out, strC(" "));
+	printStr(out, opt.arg_label);
+      }
+
       printStr(out, strFromC("\n"));
 
       if (opt.description.len) {
-	str_t para = opt.description;
-	while (para.len) {
-	  str_t line = strTakeLineWrapped(para, cols - 10);
-	  printStr(out, strFromC("          "));
-	  printStr(out, line);
-	  printStr(out, strFromC("\n"));
-	  para = strDropBytes(para, line.len);
-	  para = strSkipByte(para, ' ');
-	}
+	printWrappedParagraph(
+	   out,
+	   strFromC("          "),
+	   cols - 10,
+	   opt.description
+        );
       }
     }
   }

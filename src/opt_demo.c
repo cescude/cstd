@@ -65,11 +65,15 @@ int main(int argc, char **argv) {
   }
   printf("\n");
 
+  for (size i=0; i<columns; i++) {
+    printChar(stdout, utf8CharFromC('v'));
+  }
+  printStr(stdout, strC("\n"));
+  
   while (strNonEmpty(text)) {
     str_t line = strTakeLineWrapped(text, columns);
-    printStr(stdout, strFromC("["));
-    printStr(stdout, line);
-    printStr(stdout, strFromC("]\n"));
+    printStr(stdout, strTrim(line, strC(" \n")));
+    printStr(stdout, strC("\n"));
     text.beg = line.end;
     text = strTrimLeft(text, strC(" "));
   }

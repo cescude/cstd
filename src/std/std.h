@@ -44,7 +44,7 @@ typedef struct {
   bool right;
 } format_t;
 
-#define strC(cstr)                    (str_t){cstr, cstr + sizeof(cstr)-1}
+#define strC(cstr)                    (str_t){cstr, &cstr[sizeof(cstr)-1]}
 #define strFromC(cstr)                (str_t){cstr, cstr + strlen(cstr)}
 #define strFromBuf(buf)		      (str_t){buf.ptr, buf.ptr + buf.len}
 #define bufFromPtr(ptr, sz)	      (buf_t){ptr, 0, sz}

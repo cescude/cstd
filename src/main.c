@@ -31,9 +31,9 @@ int main(int argc, char **argv) {
 	printStr(stdout, strFromC(")\n"));
 
 	if (line.len < rbuf.len) {
-	  bufDrop(&rbuf, line.len + 1);
+	  bufDropBytes(&rbuf, line.len + 1);
 	} else {
-	  bufDrop(&rbuf, line.len);
+	  bufDropBytes(&rbuf, line.len);
 	}
 
 	/* maybe we can grab a new line without going to the file? */

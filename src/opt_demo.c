@@ -65,13 +65,13 @@ int main(int argc, char **argv) {
   }
   printf("\n");
 
-  while (text.len) {
+  while (strNonEmpty(text)) {
     str_t line = strTakeLineWrapped(text, columns);
     printStr(stdout, strFromC("["));
     printStr(stdout, line);
     printStr(stdout, strFromC("]\n"));
-    text = strDropBytes(text, line.len);
-    text = strSkipByte(text, ' ');
+    text.beg = line.end;
+    text = strTrimLeft(text, strC(" "));
   }
   
   return 0;

@@ -51,7 +51,7 @@ void optRest(opts_config_t *config, ptrdiff_t *result) {
   };
 }
 
-ptrdiff_t _findBoolIdx(opts_config_t config, str_t name) {
+size _findBoolIdx(opts_config_t config, str_t name) {
   for (ptrdiff_t i=0; i<config.num_opts; i++) {
     if (config.opts[i].type == optbool &&
 	strEquals(config.opts[i].long_name, name)) {
@@ -61,7 +61,7 @@ ptrdiff_t _findBoolIdx(opts_config_t config, str_t name) {
   return config.num_opts;
 }
 
-ptrdiff_t _findValIdx(opts_config_t config, str_t name) {
+size _findValIdx(opts_config_t config, str_t name) {
   for (ptrdiff_t i=0; i<config.num_opts; i++) {
     if (config.opts[i].type != optbool &&
 	strEquals(config.opts[i].long_name, name)) {
@@ -71,7 +71,7 @@ ptrdiff_t _findValIdx(opts_config_t config, str_t name) {
   return config.num_opts;
 }
 
-ptrdiff_t _findShortBoolIdx(opts_config_t config, utf8_char_t name) {
+size _findShortBoolIdx(opts_config_t config, utf8_char_t name) {
   for (ptrdiff_t i=0; i<config.num_opts; i++) {
     if (config.opts[i].type == optbool &&
 	utf8CharEquals(config.opts[i].short_name, name)) {
@@ -81,7 +81,7 @@ ptrdiff_t _findShortBoolIdx(opts_config_t config, utf8_char_t name) {
   return config.num_opts;
 }
 
-ptrdiff_t _findShortValIdx(opts_config_t config, utf8_char_t name) {
+size _findShortValIdx(opts_config_t config, utf8_char_t name) {
   for (ptrdiff_t i=0; i<config.num_opts; i++) {
     if (config.opts[i].type != optbool &&
 	utf8CharEquals(config.opts[i].short_name, name)) {
@@ -91,7 +91,7 @@ ptrdiff_t _findShortValIdx(opts_config_t config, utf8_char_t name) {
   return config.num_opts;
 }
 
-ptrdiff_t _findRestIdx(opts_config_t config) {
+size _findRestIdx(opts_config_t config) {
   for (ptrdiff_t i=0; i<config.num_opts; i++) {
     if (config.opts[i].type == optrest) {
       return i;
@@ -103,9 +103,9 @@ ptrdiff_t _findRestIdx(opts_config_t config) {
 bool _setVal(opt_t opt, str_t arg_tail, str_t nextarg, ptrdiff_t *idx) {
   str_t val = {0};
 
-  if (arg_tail.len > 0) {
+  if (strNonEmpty(arg_tail)) {
     val = arg_tail;
-  } else if (nextarg.ptr) {
+  } else if (nextarg.beg) {
     val = nextarg;
     (*idx) += 1;
   } else {
@@ -130,31 +130,31 @@ bool _setVal(opt_t opt, str_t arg_tail, str_t nextarg, ptrdiff_t *idx) {
 
 bool optParse(opts_config_t config, int num_args, char **args) {
   opt_t *opts = config.opts;
-  ptrdiff_t num_opts = config.num_opts;
+  size num_opts = config.num_opts;
 
-  ptrdiff_t idx = 1;
+  size idx = 1;
   for (; idx < num_args; idx++) {
     str_t arg = strFromC(args[idx]);
     str_t nextarg = idx + 1 < num_args
       ? strFromC(args[idx + 1])
       : (str_t){0};
 
-    if (strEquals(arg, strFromC("--"))) {
+    if (strEquals(arg, strC("--"))) {
       /* end of flags, skip the -- token though */
       idx++;
       break;
-    } else if (strEquals(arg, strFromC("-"))) {
+    } else if (strEquals(arg, strC("-"))) {
       /* end of flags, but do include - in the list of "rest" tokens */
       break;
-    } else if (strStartsWith(arg, strFromC("--"))) {
+    } else if (strStartsWith(arg, strC("--"))) {
       /* long arg */
       arg = strDropChars(arg, 2);
 
       /* TODO: support --x=y type flags; rn we only support -x y */
       /* str_t arg_name = strTakeToByte(arg, '='); */
       
-      ptrdiff_t a = _findBoolIdx(config, arg); /* is arg a bool? */
-      ptrdiff_t b = _findValIdx(config, arg);  /* or is it a value? */
+      size a = _findBoolIdx(config, arg); /* is arg a bool? */
+      size b = _findValIdx(config, arg);  /* or is it a value? */
 
       if (a < num_opts) {
 	*opts[a].ptr.b = 1;
@@ -169,9 +169,9 @@ bool optParse(opts_config_t config, int num_args, char **args) {
       } else {
 	return 0;		/* unrecognized long option */
       }
-    } else if (strStartsWith(arg, strFromC("-"))) {
+    } else if (strStartsWith(arg, strC("-"))) {
       arg = strDropChars(arg, 1);
-      if (!arg.len) {
+      if (strIsEmpty(arg)) {
 	return 0;
       }
 
@@ -184,9 +184,9 @@ bool optParse(opts_config_t config, int num_args, char **args) {
 	has two booleans, each of which allows for the inclusion of
 	additional flags; the C option, however, ends the chain).
       */
-      while (arg.len > 0) {
-	ptrdiff_t a = _findShortBoolIdx(config, strFirstChar(arg));
-	ptrdiff_t b = _findShortValIdx(config, strFirstChar(arg));
+      while (strNonEmpty(arg)) {
+	size a = _findShortBoolIdx(config, strFirstChar(arg));
+	size b = _findShortValIdx(config, strFirstChar(arg));
 
 	arg = strDropChars(arg, 1); /* move beyond this named arg */
 	
@@ -213,7 +213,7 @@ bool optParse(opts_config_t config, int num_args, char **args) {
     }
   }
 
-  ptrdiff_t a = _findRestIdx(config);
+  size a = _findRestIdx(config);
   if (a < num_opts) {
     *opts[a].ptr.r = idx;
   }
@@ -221,13 +221,13 @@ bool optParse(opts_config_t config, int num_args, char **args) {
   return 1;
 }
 
-void printWrappedParagraph(print_t p, str_t prefix, ptrdiff_t cols, str_t para) {
-  while (para.len) {
+void printWrappedParagraph(print_t p, str_t prefix, size cols, str_t para) {
+  while (strNonEmpty(para)) {
     str_t line = strTakeLineWrapped(para, cols - 10);
     printStr(p, prefix);
     printStr(p, strTrim(line, strC(" \n")));
-    printStr(p, strFromC("\n"));
-    para = strDropBytes(para, line.len);
+    printStr(p, strC("\n"));
+    para.beg = line.end;	/* skip past the plucked line */
     para = strTrimLeft(para, strC(" "));
   }
 }
@@ -235,12 +235,12 @@ void printWrappedParagraph(print_t p, str_t prefix, ptrdiff_t cols, str_t para) 
 void optPrintUsage(opts_config_t config, ptrdiff_t cols) {
   print_t out = printerFromFile(STDOUT_FILENO, NULL);
 
-  if (config.summary.len) {
+  if (strNonEmpty(config.summary)) {
     printWrappedParagraph(out, (str_t){0}, cols, config.summary);
   }
 
   if (config.num_opts) {
-    printStr(out, strFromC("Options:\n"));
+    printStr(out, strC("Options:\n"));
   }
 
   for (ptrdiff_t idx=0; idx<config.num_opts; idx++) {
@@ -248,37 +248,36 @@ void optPrintUsage(opts_config_t config, ptrdiff_t cols) {
 
     if (opt.type != optrest) {
       bool has_short = opt.short_name;
-      bool has_long  = opt.long_name.len;
+      bool has_long  = strNonEmpty(opt.long_name);
       
       if (has_short) {
-	printStr(out, strFromC("  -"));
+	printStr(out, strC("  -"));
 	printChar(out, opt.short_name);
       } else {
-	printStr(out, strFromC("    "));
+	printStr(out, strC("    "));
       }
 
-
       if (has_short && has_long) {
-	printStr(out, strFromC(", --"));
+	printStr(out, strC(", --"));
       } else if (has_long) {
-	printStr(out, strFromC("  --"));
+	printStr(out, strC("  --"));
       }
 
       if (has_long) {
 	printStr(out, opt.long_name);
       }
 
-      if ((has_short || has_long) && opt.arg_label.len) {
+      if ((has_short || has_long) && strNonEmpty(opt.arg_label)) {
 	printStr(out, strC(" "));
 	printStr(out, opt.arg_label);
       }
 
-      printStr(out, strFromC("\n"));
+      printStr(out, strC("\n"));
 
-      if (opt.description.len) {
+      if (strNonEmpty(opt.description)) {
 	printWrappedParagraph(
 	   out,
-	   strFromC("          "),
+	   strC("          "),
 	   cols - 10,
 	   opt.description
         );

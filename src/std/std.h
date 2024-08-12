@@ -11,15 +11,15 @@ typedef ptrdiff_t size;
 
 /*
   Assume the str_t struct *doesn't* own its memory, ie., it's really a
-  slice into something else (so we can narrow ptr/len without causing
-  a memory leak).
+  slice into something else (so we can narrow without causing a memory
+  leak).
 
   Assume the str_t points to r/o memory, so no modifications should be
   done in these str* functions.
 */
 typedef struct {
-  char *ptr;
-  ptrdiff_t len;
+  char *beg;
+  char *end;
 } str_t;
 
 /* For working with utf8 characters */
@@ -44,38 +44,38 @@ typedef struct {
   bool right;
 } format_t;
 
-#define strC(const_cstr)              (str_t){const_cstr, sizeof(const_cstr)-1}
-#define strFromC(cstr)                (str_t){cstr, strlen(cstr)}
-#define strFromBuf(buf)		      (str_t){buf.ptr, buf.len}
+#define strC(cstr)                    (str_t){cstr, cstr + sizeof(cstr)-1}
+#define strFromC(cstr)                (str_t){cstr, cstr + strlen(cstr)}
+#define strFromBuf(buf)		      (str_t){buf.ptr, buf.ptr + buf.len}
 #define bufFromPtr(ptr, sz)	      (buf_t){ptr, 0, sz}
 #define bufFromArray(arr)	      (buf_t){arr, 0, sizeof(arr)}
 #define printerFromFile(fd, buf)      (print_t){fd, buf}
 
+size strLen(str_t s);
+size strLenBytes(str_t s);
+
+bool strIsEmpty(str_t s);
+bool strNonEmpty(str_t s);
+
 bool strEquals(str_t s, str_t t);
 bool strStartsWith(str_t s, str_t prefix);
 
-str_t strDropBytes(str_t s, ptrdiff_t count);
-str_t strDropChars(str_t s, ptrdiff_t count);
+str_t strDropChars(str_t s, size count);
+str_t strDropBytes(str_t s, size count);
 
 utf8_char_t strFirstChar(str_t s);
 
-/*
-  Return a new str, bounded by '\n' (or an arbitrary *other*
-  character).
-
-  If src doesn't contain the searched for character, the original str
-  is returned.
- */
 str_t strFirstLine(str_t src);
-str_t strTakeToByte(str_t src, char c);
+
 str_t strTakeToChar(str_t src, utf8_char_t c);
+str_t strTakeToByte(str_t src, char c);
 
 str_t strSkipByte(str_t src, char c);
 
 str_t strTrim(str_t haystack, str_t needles);
 str_t strTrimLeft(str_t haystack, str_t needles);
 str_t strTrimRight(str_t haystack, str_t needles);
-str_t strTakeLineWrapped(str_t text, ptrdiff_t cols);
+str_t strTakeLineWrapped(str_t text, size cols);
 
 uint64_t strHash_djb2(str_t src);
 
@@ -98,12 +98,16 @@ void bufClear(buf_t *buf);
     { [C,D,_,_,_], 2, 5 }
   
 */
-void bufDrop(buf_t *buf, ptrdiff_t sz);
+void bufDropBytes(buf_t *buf, size sz);
 
 /*
   Returns str w/ any data not appended, so if the returned str has
   len == 0, you know the full input is in buf.
+
+  The second version is utf8 aware and won't copy a partial character
+  into buf.
 */
+str_t bufAppendBytes(buf_t *buf, str_t str);
 str_t bufAppendStr(buf_t *buf, str_t str);
 
 /*

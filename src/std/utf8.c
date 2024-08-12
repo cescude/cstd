@@ -15,40 +15,24 @@ utf8_char_t utf8CharFromC(char c) {
 }
 
 // NOTE: write tests
-str_t utf8DropChars(str_t s, ptrdiff_t count) {
-  ptrdiff_t idx = 0;
-  for (; idx < s.len && 0 < count; count--) {
-    idx += utf8BytesNeeded(s.ptr[idx]);
+str_t utf8DropChars(str_t s, size count) {
+  for (; s.beg < s.end && 0 < count; count--) {
+    s.beg += utf8BytesNeeded(*s.beg);
   }
-
-  s.len -= idx;
-  s.ptr += idx;
-
-  /* we don't ever want to adjust ptr beyond it's length, even when
-     passed in an incorrectly aligned str */
-  if (s.len < 0) {
-    s.ptr += s.len;
-    s.len = 0;
+  
+  /*
+    we don't ever want to adjust ptr beyond it's length, even when
+    passed in an incorrectly aligned str.
+  */
+  
+  if (s.end < s.beg) {
+    s.beg = s.end;
   }
 
   return s;
 }
 
-ptrdiff_t utf8CharLen(utf8_char_t ch) {
-  packable_char_t p = { .value = ch };
-  return utf8BytesNeeded(p.bytes[0]);
-}
-
-ptrdiff_t utf8StrLen(str_t s) {
-  ptrdiff_t count = 0;
-  for (ptrdiff_t i=0; i<s.len; count++) {
-    i += utf8BytesNeeded(s.ptr[i]);
-  }
-  return count;
-}
-
-
-ptrdiff_t utf8BytesNeeded(char head) {
+size utf8BytesNeeded(char head) {
   if ((head & 0x80) == 0) {
     return 1;
   } else if ((head & 0xC0) == 0x80) {
@@ -65,46 +49,48 @@ ptrdiff_t utf8BytesNeeded(char head) {
   abort();
 }
 
-bool utf8NextChar(str_t s, ptrdiff_t *ch_idx, ptrdiff_t *idx) {
-  ptrdiff_t i = *idx + utf8BytesNeeded(s.ptr[*idx]);
+size utf8CharLen(utf8_char_t ch) {
+  packable_char_t p = { .value = ch };
+  return utf8BytesNeeded(p.bytes[0]);
+}
 
-  if (i < s.len) {
-    *idx = i;
-
-    if (ch_idx != NULL) {
-      *ch_idx += 1;
-    }
-    
-    return 1;
+size utf8StrLen(str_t s) {
+  size count = 0;
+  for (; s.beg < s.end; count++) {
+    s.beg += utf8BytesNeeded(*s.beg);
   }
-
-  /* there is NO next character! */
-  return 0;
+  return count;
 }
 
 utf8_char_t utf8FirstChar(str_t s) {
-  if (s.len < 1) {
+  if (s.beg == s.end) {
     return 0;
   }
-  
-  packable_char_t result = {0};
-  memmove(result.bytes, s.ptr, utf8BytesNeeded(s.ptr[0]));
-  return result.value;
+
+  size char_width = utf8BytesNeeded(*s.beg);
+  if (char_width <= s.end - s.beg) {
+    packable_char_t result = {0};
+    memmove(result.bytes, s.beg, char_width);
+    return result.value;
+  }
+
+  return 0;
 }
 
-utf8_char_t utf8CharAt(str_t s, ptrdiff_t index) {
+utf8_char_t utf8CharAt(str_t s, size index) {
   s = utf8DropChars(s, index);
   return utf8FirstChar(s);
 }
 
 bool utf8CharEquals(utf8_char_t a, utf8_char_t b) {
-  ptrdiff_t sz_a = utf8CharLen(a);
-  ptrdiff_t sz_b = utf8CharLen(b);
+  size sz_a = utf8CharLen(a);
+  size sz_b = utf8CharLen(b);
 
   if (sz_a != sz_b) return 0;
 
   packable_char_t pa = { .value = a };
   packable_char_t pb = { .value = b };
+  
   return memcmp(pa.bytes, pb.bytes, sz_a) == 0;
 }
 

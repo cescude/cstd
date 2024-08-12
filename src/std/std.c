@@ -1,254 +1,67 @@
 #include "std.h"
 
+#include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
-
-ptrdiff_t strLen(str_t s) {
-  return utf8StrLen(s);
-}
-
-bool strEquals(str_t s, str_t t) {
-  if (s.len != t.len) return 0;
-  if (s.ptr == t.ptr) return 1;
-
-  ptrdiff_t min_sz = s.len < t.len ? s.len : t.len;
-  return memcmp(s.ptr, t.ptr, min_sz) == 0;
-}
-
-bool strStartsWith(str_t s, str_t prefix) {
-  if (s.len < prefix.len) return 0;
-  
-  s.len = prefix.len;
-  return strEquals(s, prefix);
-}
-
-// TODO tests
-str_t strDropBytes(str_t s, ptrdiff_t count) {
-  ptrdiff_t min_sz = count < s.len ? count : s.len;
-  s.len -= min_sz;
-  s.ptr += min_sz;
-  return s;
-}
-
-str_t strDropChars(str_t s, ptrdiff_t count) {
-  return utf8DropChars(s, count);
-}
-
-utf8_char_t strFirstChar(str_t s) {
-  return utf8FirstChar(s);
-}
-
-ptrdiff_t strCharByteIndex(str_t s, utf8_char_t ch) {
-  ptrdiff_t idx = 0;
-  do {
-    utf8_char_t a = strFirstChar(s);
-    if (utf8CharEquals(ch, a)) {
-      return idx;
-    }
-  } while (utf8NextChar(s, NULL, &idx));
-  return s.len;
-}
-
-ptrdiff_t strCharIndex(str_t s, utf8_char_t ch) {
-  ptrdiff_t ch_idx = 0;
-  ptrdiff_t idx = 0;
-  do {
-    utf8_char_t a = strFirstChar(s);
-    if (utf8CharEquals(ch, a)) {
-      return ch_idx;
-    }
-  } while (utf8NextChar(s, &ch_idx, &idx));
-  return ch_idx;
-}
-
-str_t strFirstLine(str_t src) {
-  return strTakeToByte(src, '\n');
-}
-
-str_t strTakeToByte(str_t src, char c) {
-  str_t result = src;
-  for (result.len = 0; result.len < src.len; result.len++) {
-    if (src.ptr[result.len] == c) {
-      break;
-    }
-  }
-  return result;
-}
-
-str_t strTrim(str_t src, str_t needles) {
-  return strTrimRight(strTrimLeft(src, needles), needles);
-}
-
-str_t strTrimLeft(str_t src, str_t needles) {
-
-  for (size i=0; i<src.len;) {
-    ptrdiff_t char_width = utf8BytesNeeded(src.ptr[i]);
-
-    bool found_char = 0;
-
-    for (size j=0; j <= needles.len - char_width;) {
-      if (memcmp(src.ptr + i, needles.ptr + j, char_width) == 0) {
-	found_char = 1;
-	break;
-      }
-
-      j += utf8BytesNeeded(needles.ptr[j]);
-    }
-    
-    if (!found_char) {
-      src.ptr += i;
-      src.len -= i;
-      return src;
-    }
-
-    i += char_width;
-  }
-
-  src.ptr += src.len;
-  src.len = 0;
-
-  return src;
-}
-
-str_t strTrimRight(str_t src, str_t needles) {
-
-  str_t result = src;
-  result.len = 0;	   /* assume we've trimmed the whole string */
-  
-  for (size i=0; i<src.len;) {
-    ptrdiff_t char_width = utf8BytesNeeded(src.ptr[i]);
-
-    bool found_char = 0;
-
-    for (size j=0; j <= needles.len - char_width;) {
-      if (memcmp(src.ptr + i, needles.ptr + j, char_width) == 0) {
-	found_char = 1;
-	break;
-      }
-
-      j += utf8BytesNeeded(needles.ptr[j]);
-    }
-    
-    i += char_width;
-    
-    if (!found_char) {
-      /* this character isn't in needles, so extend our result */
-      result.len = i;
-    }
-  }
-
-  return result;
-}
-
-str_t strSkipByte(str_t src, char c) {
-  ptrdiff_t idx = 0;
-  
-  while (idx < src.len && src.ptr[idx] == c) {
-    idx++;
-  }
-  
-  src.ptr += idx;
-  src.len -= idx;
-
-  return src;
-}
-
-str_t strTakeLineWrapped(str_t text, ptrdiff_t cols) {
-  if (strLen(text) <= cols) {
-    return text;
-  }
-
-  str_t line = text;
-  line.len = 0;
-
-  ptrdiff_t col = 0;
-  ptrdiff_t col_idx = 0;
-  while (col < cols && utf8NextChar(text, &col, &col_idx)) {
-    if (text.ptr[col_idx] == ' ') {
-      line.len = col_idx;
-    } else if (text.ptr[col_idx] == '\n') {
-      line.len = col_idx;
-      break;
-    }
-  }
-  
-  if (line.len == 0) {
-    /* a single word is more than cols wide, need to break it up! */
-    line.len = col_idx;	      /* TODO: test this case w/ utf8 chars */
-  }
-
-  return line;
-}
-
-uint64_t strHash_djb2(str_t src) {
-  /* http://www.cse.yorku.ca/~oz/hash.html */
-  uint64_t hash = 5381;
-  for (int i=0; i<src.len; i++) {
-    hash = 33 * hash ^ src.ptr[i];
-  }
-  return hash;
-}
-
-// TODO tests
-bool strMaybeParseInt(str_t s, int *result) {
-  bool negative = 0;
-  
-  if (s.len == 0) return 0;
-
-  if (s.ptr[0] == '-') {
-    negative = 1;
-
-    s.ptr++;
-    s.len--;
-
-    /* can't have just "-", need at least "-N" */
-    if (s.len == 0) return 0;
-  }
-
-  int tmp = 0;
-  for (ptrdiff_t i=0; i<s.len; i++) {
-
-    if (s.ptr[i] < '0' || s.ptr[i] > '9') {
-      return 0;
-    }
-    
-    tmp *= 10;
-    tmp += s.ptr[i] - '0';
-
-    if (tmp < 0) {
-      return 0;			/* overflow :^( */
-    }
-  }
-
-  *result = negative ? -tmp : tmp;
-  return 1;
-}
 
 void bufClear(buf_t *buf) {
   buf->len = 0;
 }
 
-void bufDrop(buf_t *buf, ptrdiff_t sz) {
+void bufDropBytes(buf_t *buf, size sz) {
   sz = sz > buf->len ? buf->len : sz;
   sz = sz < 0 ? 0 : sz;
   memmove(buf->ptr, buf->ptr + sz, buf->len - sz);
   buf->len -= sz;
 }
 
-str_t bufAppendStr(buf_t *bufp, str_t str) {
-  buf_t b = *bufp;
-  ptrdiff_t free = b.cap - b.len;
-  ptrdiff_t sz = str.len < free ? str.len : free;
+str_t bufAppendBytes(buf_t *bufp, str_t str) {
+  size str_len = str.end - str.beg;
   
-  memmove(b.ptr + b.len, str.ptr, sz);
+  buf_t b = *bufp;
+  size free = b.cap - b.len;
+  size sz = str_len < free ? str_len : free;
+  
+  memmove(b.ptr + b.len, str.beg, sz);
 
   /* update buffer len to reflect new data */
   b.len += sz;
   *bufp = b;
 
   /* shift str position to reflect any uncopied data */
-  str.ptr += sz;
-  str.len -= sz;
+  str.beg += sz;
+  return str;
+}
+
+/* Treats str as utf8, won't copy partial characters */
+str_t bufAppendStr(buf_t *bufp, str_t str) {
+  size str_len = str.end - str.beg;
+  
+  buf_t b = *bufp;
+  ptrdiff_t free = b.cap - b.len;
+  ptrdiff_t sz = str_len < free ? str_len : free;
+
+  if (sz < str_len) {
+    /*
+      Hit the buffer capacity, so we're copying a partial string. Need
+      to ensure the final character is valid...
+    */
+
+    while ((str.beg[sz] & 0xC0) == 0x80) {
+      sz--;
+    }
+
+    /* str.beg[sz] should now point to a valid utf8-char start */
+  }
+  
+  memmove(b.ptr + b.len, str.beg, sz);
+
+  /* update buffer len to reflect new data */
+  b.len += sz;
+  *bufp = b;
+
+  /* shift str position to reflect any uncopied data */
+  str.beg += sz;
   return str;
 }
 
@@ -282,6 +95,7 @@ bool fdReadIntoBuf(int fd, buf_t *bufp) {
 
 str_t fdMemMap(int fd) {
   /* TODO */
+  abort();
   return (str_t){NULL, 0};
 }
 
@@ -306,7 +120,7 @@ bool fdFlush(int fd, buf_t *bufp) {
     b.len -= sz;
   }
 
-  bufDrop(bufp, bufp->len - b.len); /* handle partial flush */
+  bufDropBytes(bufp, bufp->len - b.len); /* handle partial flush */
   return result;
 }
 
@@ -314,14 +128,18 @@ bool fdPrintStr(int fd, buf_t *bufp, str_t s) {
 
   /* conditions for an unbuffered, direct write */
   if (bufp == NULL || bufp->ptr == NULL || bufp->cap == 0) {
-    buf_t tmp = (buf_t){s.ptr, s.len, s.len};
+    buf_t tmp = (buf_t){
+      s.beg,
+      s.end - s.beg,
+      s.end - s.beg
+    };
     return fdFlush(fd, &tmp);
   }
 
   do {
     s = bufAppendStr(bufp, s);
     
-    if (s.len == 0) {
+    if (strIsEmpty(s)) {
       break;
     }
 
@@ -340,9 +158,10 @@ bool fdPrintStrF(int fd, buf_t *buf, str_t s, format_t f) {
   if (!f.right) {
     result = result && fdPrintStr(fd, buf, s);
   }
-  
-  for (ptrdiff_t i=0; i < f.width - s.len; i++) {
-    result = result && fdPrintStr(fd, buf, strFromC(" "));
+
+  size s_len = s.end - s.beg;
+  for (size i=0; i < f.width - s_len; i++) {
+    result = result && fdPrintStr(fd, buf, strC(" "));
   }
   
   if (f.right) {
@@ -358,8 +177,8 @@ bool fdPrintChar(int fd, buf_t *buf, utf8_char_t c) {
 
 bool fdPrintCharF(int fd, buf_t *buf, utf8_char_t c, format_t f) {
   str_t s = (str_t){
-    .ptr = (char*)(&c),
-    .len = utf8CharLen(c),
+    .beg = (char*)(&c),
+    .end = (char*)(&c) + utf8CharLen(c),
   };
   return fdPrintStrF(fd, buf, s, f);
 }
@@ -371,7 +190,7 @@ bool fdPrintU64(int fd, buf_t *buf, uint64_t n) {
 bool fdPrintU64F(int fd, buf_t *buf, uint64_t n, format_t f) {
   char data[21] = {0};
   int len = snprintf(data, sizeof(data), "%lu", n);
-  return fdPrintStrF(fd, buf, (str_t){data, len}, f);
+  return fdPrintStrF(fd, buf, (str_t){data, data + len}, f);
 }
 
 bool fdPrintI64(int fd, buf_t *buf, int64_t n) {
@@ -381,7 +200,7 @@ bool fdPrintI64(int fd, buf_t *buf, int64_t n) {
 bool fdPrintI64F(int fd, buf_t *buf, int64_t n, format_t f) {
   char data[21] = {0};
   int len = snprintf(data, sizeof(data), "%ld", n);
-  return fdPrintStrF(fd, buf, (str_t){data, len}, f);
+  return fdPrintStrF(fd, buf, (str_t){data, data + len}, f);
 }
 
 bool printFlush(print_t p) {

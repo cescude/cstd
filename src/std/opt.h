@@ -37,5 +37,5 @@ void optRest(opts_config_t *config, ptrdiff_t *result);
 
 bool optParse(opts_config_t config, int numargs, char **args);
 
-/* always goes to stderr */
+/* always goes to stdout */
 void optPrintUsage(opts_config_t config, ptrdiff_t cols);

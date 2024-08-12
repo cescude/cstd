@@ -51,7 +51,9 @@ typedef struct {
 #define bufFromArray(arr)	      (buf_t){arr, 0, sizeof(arr)}
 #define printerFromFile(fd, buf)      (print_t){fd, buf}
 
-size strLen(str_t s);
+bool strNextChar(str_t *s);
+
+  size strLen(str_t s);
 size strLenBytes(str_t s);
 
 bool strIsEmpty(str_t s);

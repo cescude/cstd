@@ -134,6 +134,16 @@ int main(int argc, char **argv) {
 	}
       }));
 
+  runtest("strTrimLeft Basic functionality", ({
+	struct { str_t src, chars, result; } cases[] = {
+	  { strC("   \t one"), strC(" \t"), strC("one") }
+	};
+
+	for (size i=0; i<countof(cases); i++) {
+	  assert(strEquals(strTrimLeft(cases[i].src, cases[i].chars), cases[i].result));
+	}
+      }));
+
   runtest("utf8CharEquals Basic functionality", ({
 	struct { utf8_char_t a, b; } cases[] = {
 	  { utf8CharFromC('v'), utf8CharFromC('v') },

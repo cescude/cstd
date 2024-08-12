@@ -237,6 +237,7 @@ void optPrintUsage(opts_config_t config, ptrdiff_t cols) {
 
   if (strNonEmpty(config.summary)) {
     printWrappedParagraph(out, (str_t){0}, cols, config.summary);
+    printStr(out, strC("\n"));
   }
 
   if (config.num_opts) {

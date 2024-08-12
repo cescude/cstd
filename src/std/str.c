@@ -4,6 +4,15 @@
 #include <string.h>
 #include <sys/mman.h>
 
+bool strNextChar(str_t *s) {
+  size char_width = utf8BytesNeeded(*s->beg);
+  s->beg += char_width;
+  if (s->end < s->beg) {
+    s->beg = s->end;
+  }
+  return s->beg < s->end;
+}
+
 size strLen(str_t s) {
   return utf8StrLen(s);
 }
@@ -100,7 +109,7 @@ str_t strTrimLeft(str_t src, str_t needles) {
     bool found_char = 0;
 
     str_t cursor = needles;
-    while (cursor.beg < cursor.end - char_width) {
+    while (cursor.beg <= cursor.end - char_width) {
       if (memcmp(src.beg, cursor.beg, char_width) == 0) {
 	found_char = 1;
 	break;
@@ -156,20 +165,13 @@ str_t strTakeLineWrapped(str_t text, size cols) {
 
   str_t line = (str_t){text.beg, text.beg};
 
-  size original_cols = cols;
-  
-  while (cols > 0 && text.beg < text.end) {
+  for (size c = cols; c >= 0 && strNonEmpty(text); c--, strNextChar(&text)) {
     if (*text.beg == ' ') {
       line.end = text.beg;
     } else if (*text.beg == '\n') {
       line.end = text.beg;
-      cols = original_cols; 	/* a forced newline, we can start over */
-      /* line.end = text.beg; */
-      /* break; */
+      c = cols;	/* a forced newline, we can start over from column 1 */
     }
-
-    text.beg++;
-    cols--;
   }
   
   if (strIsEmpty(line)) {
@@ -208,14 +210,14 @@ bool strMaybeParseInt(str_t s, int *result) {
   }
 
   int tmp = 0;
-  for (; s.beg < s.end; s.beg++) {
+  for (str_t i = s; strNonEmpty(i); strNextChar(&i)) {
 
-    if (*s.beg < '0' || *s.beg > '9') {
+    if (*i.beg < '0' || *i.beg > '9') {
       return 0;
     }
     
     tmp *= 10;
-    tmp += *s.beg - '0';
+    tmp += *i.beg - '0';
 
     if (tmp < 0) {
       return 0;			/* overflow :^( */
@@ -225,4 +227,3 @@ bool strMaybeParseInt(str_t s, int *result) {
   *result = negative ? -tmp : tmp;
   return 1;
 }
-

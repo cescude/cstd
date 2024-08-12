@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 	     "\n"
 	     "A command-line tool for demoing the opt-parsing aspect and "
 	     "functionality😅 contained in this personal standard "
-	     "library.\n\n");
+	     "library.");
 
   optBool(&config, &verbose, 'v', "verbose",
 	  "Be extra loud or something when performing operations "
@@ -39,12 +39,9 @@ int main(int argc, char **argv) {
   optBool(&config, &show_help, 'h', "help", "Display this help.");
   optRest(&config, &rest_idx);
 
-  if (!optParse(config, argc, argv)) {
+  if (!optParse(config, argc, argv) || show_help) {
     optPrintUsage(config, 70);
-    exit(99);
-  } else if (show_help) {
-    optPrintUsage(config, 70);
-    exit(0);
+    exit(show_help ? 0 : 99);
   }
 
   printf("ok\n");

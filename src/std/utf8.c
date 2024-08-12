@@ -63,7 +63,7 @@ size utf8StrLen(str_t s) {
 }
 
 utf8_char_t utf8FirstChar(str_t s) {
-  if (s.beg == s.end) {
+  if (s.beg >= s.end) {
     return 0;
   }
 

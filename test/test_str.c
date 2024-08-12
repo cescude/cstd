@@ -5,23 +5,28 @@
 #define countof(x) (size)(sizeof(x)/sizeof(x[0]))
 
 size suiteno = 1;
+size caseno = 1;
 size num_passed = 0;
 size num_failed = 0;
 
-#define runtest(name, body) {					\
-  {body;}							\
-  fprintf(stderr,						\
-	  "[%ld] %50s num_passed=%ld, num_failed=%ld\n",	\
-	  suiteno++, name, num_passed, num_failed);		\
-  num_passed = num_failed = 0;					\
+#define runtest(name, body) {				\
+    {body;}						\
+    fprintf(stderr,					\
+	    "[%03ld]\tpass= %ld\tfail=%ld\t%s\n",	\
+	    suiteno++, num_passed, num_failed, name);	\
+    caseno = num_passed = num_failed = 0;		\
   }
 
-#define assert(bln)					\
-  if (!(bln)) {						\
-    fprintf(stderr, "Failed at line %d\n", __LINE__);	\
-    num_failed++;					\
-  } else {						\
-    num_passed++;					\
+#define assert(bln) {					\
+    caseno++;						\
+    if (!(bln)) {					\
+      fprintf(stderr,					\
+	      "Subtest: %ld -- Failed at line %d\n",	\
+	      caseno, __LINE__);			\
+      num_failed++;					\
+    } else {						\
+      num_passed++;					\
+    }							\
   }
 
 /* taken from wikipedia */
@@ -106,7 +111,7 @@ int main(int argc, char **argv) {
 	}
       }));
 
-  runtest("strStartsWith() Basic functionality", ({
+  runtest("strStartsWith Should return 1 when prefixed", ({
 	struct { str_t str, prefix; } cases[] = {
 	  { strC(""), strC("") },
 	  { (str_t){0}, strC("") },
@@ -125,6 +130,7 @@ int main(int argc, char **argv) {
 	  { (str_t){0}, strC("a") },
 	  { strC(""), strC("a") },
 	  { strC("any"), strC("anything") },
+	  { strC("something"), strC("soem") },
 	  { strC("Mình nói"), strC("Mình nói tiếng Việt") }
 	};
 	  
@@ -136,11 +142,63 @@ int main(int argc, char **argv) {
 
   runtest("strTrimLeft Basic functionality", ({
 	struct { str_t src, chars, result; } cases[] = {
-	  { strC("   \t one"), strC(" \t"), strC("one") }
+	  { strC("one"), strC(""), strC("one") }, /* nothing to trim here */
+	  { strC("one"), strC(" "), strC("one") },
+	  { strC("   \t one"), strC(" \t"), strC("one") },
+	  { strC("abcbabcdefabc"), strC("abc"), strC("defabc") }
 	};
 
 	for (size i=0; i<countof(cases); i++) {
 	  assert(strEquals(strTrimLeft(cases[i].src, cases[i].chars), cases[i].result));
+	}
+      }));
+
+  runtest("strTrimRight Basic functionality", ({
+	struct { str_t src, chars, result; } cases[] = {
+	  { strC("one"), strC(""), strC("one") }, /* nothing to trim here */
+	  { strC("one"), strC(" "), strC("one") },
+	  { strC("one  \t  "), strC(" \t"), strC("one") },
+	  { strC("abcbabcdefabcba"), strC("abc"), strC("abcbabcdef") }
+	};
+
+	for (size i=0; i<countof(cases); i++) {
+	  assert(strEquals(strTrimRight(cases[i].src, cases[i].chars), cases[i].result));
+	}
+      }));
+
+  runtest("strTakeLineWrapped Should return full text for short rows", ({
+	struct { str_t src; size cols; } cases[] = {
+	  { strC("wrap"), 80 },
+	  { strC("wrap?"), 5 }
+	};
+
+	for (size i=0; i<countof(cases); i++) {
+	  assert(strEquals(cases[i].src, strTakeLineWrapped(cases[i].src, cases[i].cols)));
+	}
+      }));
+
+  runtest("strTakeLineWrapped Should return rows no longer than cols", ({
+	struct { str_t src; size cols; } cases[] = {
+	  { strC("wrap wrapwrap ok"), 10 },
+	  { strC("wrap?"), 5 },
+	  { strC("wrap!"), 3 }	/* hard split in the middle of the word */
+	};
+
+	for (size i=0; i<countof(cases); i++) {
+	  str_t result = strTakeLineWrapped(cases[i].src, cases[i].cols);
+	  assert(strLen(result) <= cases[i].cols);
+	}
+      }));
+
+  runtest("strTakeLineWrapped Should break on a space", ({
+	str_t para = strC("Here's an amazing piece of writing that spans "
+			  "a fair amount of text yielding many opportunities "
+			  "for wrapping.");
+
+	/* not looking for edge cases (ie. why 10...len-10) */
+	for (size i=10; i<strLen(para) - 10; i++) {
+	  str_t result = strTakeLineWrapped(para, i);
+	  assert(*result.end == ' ');
 	}
       }));
 

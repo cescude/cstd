@@ -26,9 +26,9 @@ int main(int argc, char **argv) {
 	printU64F(stdout, strHash_djb2(line), (format_t){.width=20, .right=1});
 	printCharF(stdout, utf8CharFromC(' '), (format_t){.width=5});
 	printStr(stdout, strFromC(argv[i]));
-	printStr(stdout, strFromC(" ("));
+	printStr(stdout, strC(" ("));
 	printStr(stdout, line);
-	printStr(stdout, strFromC(")\n"));
+	printStr(stdout, strC(")\n"));
 
 	if (line.len < rbuf.len) {
 	  bufDropBytes(&rbuf, line.len + 1);

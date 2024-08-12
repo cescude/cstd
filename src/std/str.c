@@ -67,13 +67,22 @@ utf8_char_t strFirstChar(str_t s) {
 }
 
 str_t strFirstLine(str_t src) {
-  return strTakeToByte(src, '\n');
+  return strTakeToChar(src, utf8CharFromC('\n'));
 }
 
 str_t strTakeToChar(str_t src, utf8_char_t c) {
-  // ...
-  abort();
-  return (str_t){0};
+  str_t cursor = src;
+
+  do {
+    if (utf8CharEquals(utf8FirstChar(cursor), c)) {
+      break;
+    }
+  } while (strNextChar(&cursor));
+  
+  return (str_t){
+    .beg = src.beg,
+    .end = cursor.beg
+  };
 }
 
 str_t strTakeToByte(str_t src, char c) {
@@ -139,7 +148,7 @@ str_t strTrimRight(str_t src, str_t needles) {
     bool found_char = 0;
 
     str_t cursor = needles;
-    while (cursor.beg < cursor.end - char_width) {
+    while (cursor.beg <= cursor.end - char_width) {
       if (memcmp(src.beg, cursor.beg, char_width) == 0) {
 	found_char = 1;
 	break;
@@ -165,7 +174,7 @@ str_t strTakeLineWrapped(str_t text, size cols) {
 
   str_t line = (str_t){text.beg, text.beg};
 
-  for (size c = cols; c >= 0 && strNonEmpty(text); c--, strNextChar(&text)) {
+  for (size c = cols; c > 0 && strNonEmpty(text); c--, strNextChar(&text)) {
     if (*text.beg == ' ') {
       line.end = text.beg;
     } else if (*text.beg == '\n') {

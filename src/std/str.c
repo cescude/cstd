@@ -4,6 +4,12 @@
 #include <string.h>
 #include <sys/mman.h>
 
+str_t strFromC(char *s) {
+  return s == NULL
+    ? (str_t){0}
+    : (str_t){s, s + strlen(s)};
+}
+
 bool strNextChar(str_t *s) {
   size char_width = utf8BytesNeeded(*s->beg);
   s->beg += char_width;
@@ -42,7 +48,11 @@ bool strEquals(str_t s, str_t t) {
 }
 
 bool strStartsWith(str_t s, str_t prefix) {
+  if (prefix.beg == NULL) return 1;
+  
   size prefix_len = strLenBytes(prefix);
+
+  if (s.beg == NULL) return prefix_len == 0;
   if (strLenBytes(s) < prefix_len) return 0;
   
   s.end = s.beg + prefix_len;

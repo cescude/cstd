@@ -5,9 +5,9 @@
 int main(int argc, char **argv) {
   bool verbose = 0;
   int energy = 5;
-  str_t filename = strFromC(".");
+  str_t filename = strC(".");
   bool show_text = 0;
-  str_t text = strFromC("");
+  str_t text = strC("");
   int columns = 80;
   bool show_help = 0;
   ptrdiff_t rest_idx;
@@ -62,17 +62,20 @@ int main(int argc, char **argv) {
   }
   printf("\n");
 
-  for (size i=0; i<columns; i++) {
-    printChar(stdout, utf8CharFromC('v'));
-  }
-  printStr(stdout, strC("\n"));
-  
-  while (strNonEmpty(text)) {
-    str_t line = strTakeLineWrapped(text, columns);
-    printStr(stdout, strTrim(line, strC(" \n")));
+  text = strTrim(text, strC(" "));
+  if (strNonEmpty(text)) {
+    for (size i=0; i<columns; i++) {
+      printChar(stdout, utf8CharFromC('v'));
+    }
     printStr(stdout, strC("\n"));
-    text.beg = line.end;
-    text = strTrimLeft(text, strC(" "));
+  
+    while (strNonEmpty(text)) {
+      str_t line = strTakeLineWrapped(text, columns);
+      printStr(stdout, strTrim(line, strC(" \n")));
+      printStr(stdout, strC("\n"));
+      text.beg = line.end;
+      text = strTrimLeft(text, strC(" "));
+    }
   }
   
   return 0;

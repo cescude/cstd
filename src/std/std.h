@@ -45,15 +45,15 @@ typedef struct {
 } format_t;
 
 #define strC(cstr)                    (str_t){cstr, &cstr[sizeof(cstr)-1]}
-#define strFromC(cstr)                (str_t){cstr, cstr + strlen(cstr)}
 #define strFromBuf(buf)		      (str_t){buf.ptr, buf.ptr + buf.len}
 #define bufFromPtr(ptr, sz)	      (buf_t){ptr, 0, sz}
 #define bufFromArray(arr)	      (buf_t){arr, 0, sizeof(arr)}
 #define printerFromFile(fd, buf)      (print_t){fd, buf}
 
+str_t strFromC(char *cstr);
 bool strNextChar(str_t *s);
 
-  size strLen(str_t s);
+size strLen(str_t s);
 size strLenBytes(str_t s);
 
 bool strIsEmpty(str_t s);

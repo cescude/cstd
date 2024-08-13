@@ -12,20 +12,22 @@ void optSummary(opts_config_t *config, char *summary) {
   dynamically allocated structures...)
 */
 
-void optBool(opts_config_t *config, bool *result, char s, char *l, char *desc) {
+void optBool(opts_config_t *config,
+	     bool *result, char s, char *l, char *desc) {
   config->opts[config->num_opts++] = (opt_t){
     .short_name = utf8CharFromC(s),
-    .long_name = l ? strFromC(l) : (str_t){0},
+    .long_name = strFromC(l),
     .description = strFromC(desc),
     .type = optbool,
     .ptr.b = result,
   };
 }
 
-void optInt(opts_config_t *config, int *result, char s, char *l, char *arg_label, char *desc) {
+void optInt(opts_config_t *config,
+	    int *result, char s, char *l, char *arg_label, char *desc) {
   config->opts[config->num_opts++] = (opt_t){
     .short_name = utf8CharFromC(s),
-    .long_name = l ? strFromC(l) : (str_t){0},
+    .long_name = strFromC(l),
     .arg_label = strFromC(arg_label),
     .description = strFromC(desc),
     .type = optint,
@@ -33,10 +35,11 @@ void optInt(opts_config_t *config, int *result, char s, char *l, char *arg_label
   };
 }
 
-void optStr(opts_config_t *config, str_t *result, char s, char *l, char *arg_label, char *desc) {
+void optStr(opts_config_t *config,
+	    str_t *result, char s, char *l, char *arg_label, char *desc) {
   config->opts[config->num_opts++] = (opt_t){
     .short_name = utf8CharFromC(s),
-    .long_name = l ? strFromC(l) : (str_t){0},
+    .long_name = strFromC(l),
     .arg_label = strFromC(arg_label),
     .description = strFromC(desc),
     .type = optstr,

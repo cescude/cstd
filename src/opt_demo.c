@@ -38,13 +38,7 @@ int main(int argc, char **argv) {
 	    "functionality 😅 contained in this (personal!) standard library.");
 
   if (!optParse(config, argc, argv) || show_help) {
-    /* print_t out = printerFromFile(STDOUT_FILENO, NULL); */
-    /* size c = 80; */
-    /* for (size i=0; i<c; i++) { */
-    /*   printU64(out, i%10); */
-    /* } */
-    /* printStr(out, strC("\n")); */
-    optPrintUsage(config, c);
+    optPrintUsage(config, 80);
     exit(show_help ? 0 : 99);
   }
 

@@ -226,8 +226,9 @@ bool optParse(opts_config_t config, int num_args, char **args) {
 }
 
 void printWrappedParagraph(print_t p, str_t prefix, size cols, str_t para) {
+  size prefix_len = strLen(prefix);
   while (strNonEmpty(para)) {
-    str_t line = strTakeLineWrapped(para, cols - 10);
+    str_t line = strTakeLineWrapped(para, cols - prefix_len);
     printStr(p, prefix);
     printStr(p, strTrim(line, strC(" \n")));
     printStr(p, strC("\n"));
@@ -280,12 +281,7 @@ void optPrintUsage(opts_config_t config, ptrdiff_t cols) {
       printStr(out, strC("\n"));
 
       if (strNonEmpty(opt.description)) {
-	printWrappedParagraph(
-	   out,
-	   strC("          "),
-	   cols - 10,
-	   opt.description
-        );
+	printWrappedParagraph(out, strC("          "), cols, opt.description);
       }
     }
   }

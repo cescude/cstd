@@ -2,8 +2,6 @@
 
 #include <stdlib.h>
 
-#define countof(x) (size)(sizeof(x)/sizeof(x[0]))
-
 typedef struct {
   char *name;
   void (*fn)(size *passed, size *failed);

@@ -9,6 +9,8 @@
 
 typedef ptrdiff_t size;
 
+#define countof(x) (size)(sizeof(x)/sizeof(x[0]))
+
 /*
   Assume the str_t struct *doesn't* own its memory, ie., it's really a
   slice into something else (so we can narrow without causing a memory

@@ -2,19 +2,14 @@
 
 #include "std.h"
 
-void optSummary(opts_config_t *config, char *summary) {
-  config->summary = strFromC(summary);
-}
-
 /*
   It's up to the caller to make sure there's sufficient space in opts
   for this (not a huge deal, since program options aren't typically
   dynamically allocated structures...)
 */
 
-void optBool(opts_config_t *config,
-	     bool *result, char s, char *l, char *desc) {
-  config->opts[config->num_opts++] = (opt_t){
+opt_t optBool(bool *result, char s, char *l, char *desc) {
+  return (opt_t){
     .short_name = utf8CharFromC(s),
     .long_name = strFromC(l),
     .description = strFromC(desc),
@@ -23,9 +18,8 @@ void optBool(opts_config_t *config,
   };
 }
 
-void optInt(opts_config_t *config,
-	    int *result, char s, char *l, char *arg_label, char *desc) {
-  config->opts[config->num_opts++] = (opt_t){
+opt_t optInt(int *result, char s, char *l, char *arg_label, char *desc) {
+  return (opt_t){
     .short_name = utf8CharFromC(s),
     .long_name = strFromC(l),
     .arg_label = strFromC(arg_label),
@@ -35,9 +29,8 @@ void optInt(opts_config_t *config,
   };
 }
 
-void optStr(opts_config_t *config,
-	    str_t *result, char s, char *l, char *arg_label, char *desc) {
-  config->opts[config->num_opts++] = (opt_t){
+opt_t optStr(str_t *result, char s, char *l, char *arg_label, char *desc) {
+  return (opt_t){
     .short_name = utf8CharFromC(s),
     .long_name = strFromC(l),
     .arg_label = strFromC(arg_label),
@@ -47,10 +40,18 @@ void optStr(opts_config_t *config,
   };
 }
 
-void optRest(opts_config_t *config, ptrdiff_t *result) {
-  config->opts[config->num_opts++] = (opt_t){
+opt_t optRest(ptrdiff_t *result) {
+  return (opt_t){
     .type = optrest,
     .ptr.r = result,
+  };
+}
+
+opts_config_t optInit(opt_t *opts, size num_opts, char *summary) {
+  return (opts_config_t){
+    .opts = opts,
+    .num_opts = num_opts,
+    .summary = strFromC(summary)
   };
 }
 

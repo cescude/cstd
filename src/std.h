@@ -54,9 +54,9 @@ typedef struct {
 } format_t;
 
 #define strC(cstr)                    (str_t){cstr, &cstr[sizeof(cstr)-1]}
-#define strFromBuf(buf)		      (str_t){buf.ptr, buf.ptr + buf.len}
-#define bytesC(cbytes)		      (bytes_t){cbytes, &cbytes[sizeof(cbytes)]}
-#define bytesFromBuf(buf)	      (bytes_t){buf.ptr, buf.ptr + buf.len}
+#define strFromBuf(buf)		      (str_t){(buf).ptr, (buf).ptr + (buf).len}
+#define bytesC(cbytes)		      (bytes_t){cbytes, &(cbytes)[sizeof(cbytes)]}
+#define bytesFromBuf(buf)	      (bytes_t){(buf).ptr, (buf).ptr + (buf).len}
 #define bufFromPtr(ptr, sz)	      (buf_t){ptr, 0, sz}
 #define bufFromArray(arr)	      (buf_t){arr, 0, sizeof(arr)}
 #define printerFromFile(fd, buf)      (print_t){fd, buf}
@@ -71,6 +71,8 @@ bool strNonEmpty(str_t s);
 
 bool strEquals(str_t s, str_t t);
 bool strStartsWith(str_t s, str_t prefix);
+
+str_t strAppend(buf_t *b, str_t s);
 
 str_t strDropChars(str_t s, size count);
 
@@ -115,7 +117,7 @@ void bufDropBytes(buf_t *buf, size sz);
   The second version is utf8 aware and won't copy a partial character
   into buf.
 */
-str_t bufAppendBytes(buf_t *buf, str_t str);
+str_t bufAppendBytes(buf_t *buf, str_t str); // TODO: move to bytes 
 str_t bufAppendStr(buf_t *buf, str_t str);
 
 /*

@@ -4,34 +4,34 @@ CFLAGS=-g3 -Wall -Wextra -Wconversion -Wdouble-promotion -Wno-unused-parameter -
 
 all: TAGS libstd.a opt_demo test_str
 
-TAGS: src/*.c src/*.h src/std/*.c src/std/*.h test/*.c
+TAGS: src/*.c src/*.h demos/*.c test/*.c
 	find . -type f -name '*.[ch]' | etags -
 
 clean:
 	find . -type f -name '*.o' | xargs rm
-	rm libstd.a
+	rm libstd.a opt_demo test_str
 
 libstd.a: std.o str.o bytes.o utf8.o opt.o
 	ar rcs libstd.a std.o str.o bytes.o utf8.o opt.o
 
-std.o: src/std/std.h src/std/std.c
-	${CC} ${CFLAGS} -c src/std/std.c
+std.o: src/std.h src/std.c
+	${CC} ${CFLAGS} -c src/std.c
 
-str.o: src/std/std.h src/std/str.c
-	${CC} ${CFLAGS} -c src/std/str.c
+str.o: src/std.h src/str.c
+	${CC} ${CFLAGS} -c src/str.c
 
-bytes.o: src/std/std.h src/std/bytes.h src/std/bytes.c
-	${CC} ${CFLAGS} -c src/std/bytes.c
+bytes.o: src/std.h src/bytes.h src/bytes.c
+	${CC} ${CFLAGS} -c src/bytes.c
 
-utf8.o: src/std/std.h src/std/utf8.h src/std/utf8.c
-	${CC} ${CFLAGS} -c src/std/utf8.c
+utf8.o: src/std.h src/utf8.h src/utf8.c
+	${CC} ${CFLAGS} -c src/utf8.c
 
-opt.o: src/std/std.h src/std/opt.h src/std/opt.c
-	${CC} ${CFLAGS} -c src/std/opt.c
+opt.o: src/std.h src/opt.h src/opt.c
+	${CC} ${CFLAGS} -c src/opt.c
 
 test_str: libstd.a test/test_str.c
 	${CC} ${CFLAGS} -o test_str test/test_str.c -L. -lstd 
 
-opt_demo: libstd.a src/opt_demo.c
-	${CC} ${CFLAGS} -o opt_demo src/opt_demo.c -L. -lstd
+opt_demo: libstd.a demos/opt_demo.c
+	${CC} ${CFLAGS} -o opt_demo demos/opt_demo.c -L. -lstd
 

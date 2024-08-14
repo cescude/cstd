@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "std/std.h"
+#include "../src/std.h"
 
 int main(int argc, char **argv) {
   bool verbose = 0;

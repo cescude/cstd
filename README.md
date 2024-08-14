@@ -47,3 +47,13 @@ of any "straightforward" usage patterns.
 
     <insert example>
 
+## TODO
+
+* Create `bytes_t` interface similar to `str_t`, and move `strLenBytes` (etc) out
+** bytesLen(bytes_t b)
+** bytesTakeUntilByte(bytes_t b, byte b)
+** bytesIntoStruct(bytes_t b, void *ptr, size sz)
+** bytesIntoArray(bytes_t b, void *ptr, size sz, size count)
+* More test coverage
+
+

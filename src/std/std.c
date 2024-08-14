@@ -4,6 +4,9 @@
 #include <string.h>
 #include <sys/mman.h>
 
+/* static print_t POUT = printerFromFile(1, NULL); */
+/* static print_t PERR = printerFromFile(2, NULL); */
+
 void bufClear(buf_t *buf) {
   buf->len = 0;
 }

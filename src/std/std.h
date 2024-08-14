@@ -27,6 +27,13 @@ typedef struct {
 /* For working with utf8 characters */
 typedef uint32_t utf8_char_t;
 
+typedef char byte;
+
+typedef struct {
+  byte *beg;
+  byte *end;
+} bytes_t;
+
 /*
   Assume that this structure is pointing at r/w data, that it doesn't own.
  */
@@ -48,6 +55,8 @@ typedef struct {
 
 #define strC(cstr)                    (str_t){cstr, &cstr[sizeof(cstr)-1]}
 #define strFromBuf(buf)		      (str_t){buf.ptr, buf.ptr + buf.len}
+#define bytesC(cbytes)		      (bytes_t){cbytes, &cbytes[sizeof(cbytes)]}
+#define bytesFromBuf(buf)	      (bytes_t){buf.ptr, buf.ptr + buf.len}
 #define bufFromPtr(ptr, sz)	      (buf_t){ptr, 0, sz}
 #define bufFromArray(arr)	      (buf_t){arr, 0, sizeof(arr)}
 #define printerFromFile(fd, buf)      (print_t){fd, buf}
@@ -56,7 +65,6 @@ str_t strFromC(char *cstr);
 bool strNextChar(str_t *s);
 
 size strLen(str_t s);
-size strLenBytes(str_t s);
 
 bool strIsEmpty(str_t s);
 bool strNonEmpty(str_t s);
@@ -65,16 +73,12 @@ bool strEquals(str_t s, str_t t);
 bool strStartsWith(str_t s, str_t prefix);
 
 str_t strDropChars(str_t s, size count);
-str_t strDropBytes(str_t s, size count);
 
 utf8_char_t strFirstChar(str_t s);
 
 str_t strFirstLine(str_t src);
 
 str_t strTakeToChar(str_t src, utf8_char_t c);
-str_t strTakeToByte(str_t src, char c);
-
-str_t strSkipByte(str_t src, char c);
 
 str_t strTrim(str_t haystack, str_t needles);
 str_t strTrimLeft(str_t haystack, str_t needles);
@@ -147,5 +151,20 @@ bool printU64F(print_t p, uint64_t s, format_t f);
 bool printI64(print_t p, int64_t n);
 bool printI64F(print_t p, int64_t s, format_t f);
 
-#include "opt.h"
+/* typedef struct { */
+/*   int fd; */
+/*   buf_t buffer; */
+/*   str_t cursor; */
+/* } reader_t; */
+
+/* #define readerFromC(fd, x) (reader_t){fd, bufFromArray(x), (str_t){x, x}} */
+
+/* reader_t readerFromBuf(int fd, buf_t b); /\* No such thing as an unbuffered reader *\/ */
+/* str_t readerTakeLine(reader_t *r); */
+/* str_t readerPeekLine(reader_t r); */
+
+
+#include "bytes.h"
 #include "utf8.h"
+#include "opt.h"
+

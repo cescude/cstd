@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/mman.h>
 
 str_t strFromC(char *s) {
@@ -23,10 +24,6 @@ size strLen(str_t s) {
   return utf8StrLen(s);
 }
 
-size strLenBytes(str_t s) {
-  return s.end - s.beg;
-}
-
 bool strIsEmpty(str_t s) {
   return s.beg >= s.end;
 }
@@ -36,24 +33,23 @@ bool strNonEmpty(str_t s) {
 }
 
 bool strEquals(str_t s, str_t t) {
-  size s_len = strLenBytes(s);
-  size t_len = strLenBytes(t);
+  size s_len = s.end - s.beg;
+  size t_len = t.end - t.beg;
   
   if (s_len != t_len) return 0;
   if (s_len == 0) return 1;	/* both are empty strings */
   if (s.beg == t.beg) return 1;	/* both point to the same memory */
 
-  size min_sz = s_len < t_len ? s_len : t_len;
-  return memcmp(s.beg, t.beg, min_sz) == 0;
+  return bcmp(s.beg, t.beg, s_len) == 0;
 }
 
 bool strStartsWith(str_t s, str_t prefix) {
   if (prefix.beg == NULL) return 1;
   
-  size prefix_len = strLenBytes(prefix);
+  size prefix_len = prefix.end - prefix.beg;
 
   if (s.beg == NULL) return prefix_len == 0;
-  if (strLenBytes(s) < prefix_len) return 0;
+  if ((s.end - s.beg) < prefix_len) return 0;
   
   s.end = s.beg + prefix_len;
   return strEquals(s, prefix);
@@ -61,15 +57,6 @@ bool strStartsWith(str_t s, str_t prefix) {
 
 str_t strDropChars(str_t s, size count) {
   return utf8DropChars(s, count);
-}
-
-str_t strDropBytes(str_t s, size count) {
-  if (count < strLenBytes(s)) {
-    s.beg += count;
-  } else {
-    s.beg = s.end;
-  }
-  return s;
 }
 
 utf8_char_t strFirstChar(str_t s) {

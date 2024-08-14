@@ -27,21 +27,25 @@ size runtests(test_t *tests, size num_tests, bool verbose) {
     size num_failed = 0;
 
     if (verbose) {
-      fprintf(stderr, "[%4lu]\t%s\n", i+1, tests[i].name);
+      fprintf(stderr, "[%04lu]\t%s\n", i+1, tests[i].name);
       fflush(stderr);
     }
     
     tests[i].fn(&num_passed, &num_failed);
 
     if (verbose) {
-      fprintf(stderr, "\tpassed=%4lu, failed=%4lu\n", num_passed, num_failed);
+      fprintf(stderr, "\tpassed=%4lu failed=%4lu\n", num_passed, num_failed);
     }
 
     total_passed += num_passed;
     total_failed += num_failed;
   }
 
-  fprintf(stderr, "Totals\n\tpassed %lu failed %lu\n", total_passed, total_failed);
+  if (verbose) {
+    fprintf(stderr, "\nResults:\tpassed= %lu failed= %lu\n", total_passed, total_failed);
+  } else {
+    fprintf(stderr, "Results: passed=%lu failed=%lu\n", total_passed, total_failed);
+  }
 
   return total_failed;
 }
@@ -57,7 +61,7 @@ void test_strLen_shouldReturnZero(size *passed, size *failed) {
 
   for (size i=0; i<countof(cases); i++) {
     assertTrue(strLen(cases[i]) == 0);
-    assertTrue(strLenBytes(cases[i]) == 0);
+    assertTrue(bytesLen(bytesFromStr(cases[i])) == 0);
   }
 }
 
@@ -69,7 +73,7 @@ void test_strLen_shouldCountUtf8Characters(size *passed, size *failed) {
 
   for (size i=0; i<countof(examples); i++) {
     assertTrue(strLen(examples[i].s) == examples[i].len);
-    assertTrue(strLenBytes(examples[i].s) == examples[i].bytes);
+    assertTrue(bytesLen(bytesFromStr(examples[i].s)) == examples[i].bytes);
   }  
 }
 
@@ -111,6 +115,18 @@ void test_strEquals_shouldReturnFalse(size *passed, size *failed) {
     assertTrue(!strEquals(cases[i].a, cases[i].b));
     assertTrue(!strEquals(cases[i].b, cases[i].a));
   }
+}
+
+void test_strEquals_shouldHandleOverlappingMemory(size *passed, size *failed) {
+  char buffer[] = "aabbaabbaabb";
+  str_t s0 = (str_t){buffer, buffer+8}; /* first aabbaabb */
+  str_t s1 = (str_t){buffer+4, buffer+12}; /* second aabbaabb */
+  assertTrue(strEquals(s0, s1));
+  assertTrue(strEquals(s1, s0));
+
+  str_t s2 = (str_t){buffer+1, buffer+9}; /* abbaabba */
+  assertFalse(strEquals(s0, s2));
+  assertFalse(strEquals(s1, s2));
 }
 
 void test_strStartsWith_shouldReturn1WhenPrefixed(size *passed, size *failed) {
@@ -217,12 +233,29 @@ void test_utf8CharEquals_shouldMatchSameCharacter(size *passed, size *failed) {
 }
 
 int main(int argc, char **argv) {
+  bool verbose = false;
+  bool help = false;
+  opt_t opts[] = {
+    optBool(&verbose, 'v', "verbose", "Be louder"),
+    optBool(&help, 'h', "help", "Show this help information"),
+  };
+
+  opts_config_t config = optInit(opts, countof(opts),
+				 "USAGE: ./test_str [OPTIONS]\n\n"
+				 "Run unit tests on the string library.\n\n");
+
+  if (!optParse(config, argc, argv) || help) {
+    optPrintUsage(config, 80);
+    return help ? 0 : 99;
+  }
+  
   test_t tests[] = {
     {"strLen should return zero", test_strLen_shouldReturnZero},
     {"strLen should count utf8 characters", test_strLen_shouldCountUtf8Characters},
     {"strIsEmpty should function appropriately", test_strIsEmpty_shouldFunctionAppropriately},
     {"strEquals should return true on same bytes", test_strEquals_shouldReturnTrue},
     {"strEquals should return false on different bytes", test_strEquals_shouldReturnFalse},
+    {"strEquals should handle overlapping memory", test_strEquals_shouldHandleOverlappingMemory},
     {"strStartsWith should return 1 when prefixed", test_strStartsWith_shouldReturn1WhenPrefixed},
     {"strTrimLeft basic functionality", test_strTrimLeft_basicFunctionality},
     {"strTrimRight Basic functionality", test_strTrimRight_basicFunctionality},
@@ -232,5 +265,5 @@ int main(int argc, char **argv) {
     {"utf8CharEquals Basic functionality", test_utf8CharEquals_shouldMatchSameCharacter},
   };
 
-  return (int)runtests(tests, countof(tests), true);
+  return (int)runtests(tests, countof(tests), verbose);
 }

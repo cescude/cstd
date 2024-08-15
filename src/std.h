@@ -58,8 +58,10 @@ typedef struct {
 #define bytesC(cbytes)		      (bytes_t){cbytes, &(cbytes)[sizeof(cbytes)]}
 #define bytesFromBuf(buf)	      (bytes_t){(buf).ptr, (buf).ptr + (buf).len}
 #define bufFromPtr(ptr, sz)	      (buf_t){ptr, 0, sz}
-#define bufFromArray(arr)	      (buf_t){arr, 0, sizeof(arr)}
+#define bufFromC(arr)		      (buf_t){arr, 0, sizeof(arr)}
 #define printerFromFile(fd, buf)      (print_t){fd, buf}
+#define printerUnbuffered(fd)	      (print_t){fd, NULL}
+#define bufPrinter(buf)		      (print_t){0, buf}
 
 str_t strFromC(char *cstr);
 bool strNextChar(str_t *s);
@@ -159,7 +161,7 @@ bool printI64F(print_t p, int64_t s, format_t f);
 /*   str_t cursor; */
 /* } reader_t; */
 
-/* #define readerFromC(fd, x) (reader_t){fd, bufFromArray(x), (str_t){x, x}} */
+/* #define readerFromC(fd, x) (reader_t){fd, bufFromC(x), (str_t){x, x}} */
 
 /* reader_t readerFromBuf(int fd, buf_t b); /\* No such thing as an unbuffered reader *\/ */
 /* str_t readerTakeLine(reader_t *r); */
@@ -169,4 +171,4 @@ bool printI64F(print_t p, int64_t s, format_t f);
 #include "bytes.h"
 #include "utf8.h"
 #include "opt.h"
-
+#include "test.h"

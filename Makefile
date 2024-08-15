@@ -11,8 +11,8 @@ clean:
 	find . -type f -name '*.o' | xargs rm
 	rm libstd.a opt_demo test_str
 
-libstd.a: std.o str.o bytes.o utf8.o opt.o
-	ar rcs libstd.a std.o str.o bytes.o utf8.o opt.o
+libstd.a: std.o str.o bytes.o utf8.o opt.o test.o
+	ar rcs libstd.a std.o str.o bytes.o utf8.o opt.o test.o
 
 std.o: src/std.h src/std.c
 	${CC} ${CFLAGS} -c src/std.c
@@ -28,6 +28,9 @@ utf8.o: src/std.h src/utf8.h src/utf8.c
 
 opt.o: src/std.h src/opt.h src/opt.c
 	${CC} ${CFLAGS} -c src/opt.c
+
+test.o: src/std.h src/test.h src/test.c
+	${CC} ${CFLAGS} -c src/test.c
 
 test_str: libstd.a test/test_str.c
 	${CC} ${CFLAGS} -o test_str test/test_str.c -L. -lstd 

@@ -107,6 +107,15 @@ bool fdFlush(int fd, buf_t *bufp) {
   if (bufp == NULL || bufp->ptr == NULL || bufp->len == 0) {
     return 1;
   }
+
+  if (fd == 0) {
+    /*
+      Not attached to an output handle, so we're just using these
+      functions for their formatting. Not sure how much I like this
+      solution, it's kind of hacky...
+    */
+    return 0;
+  }
   
   bool result = 1;
   buf_t b = *bufp;

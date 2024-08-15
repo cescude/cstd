@@ -2,77 +2,6 @@
 
 #include "../src/std.h"
 
-typedef struct {
-  size passed, failed;
-} test_t;
-
-typedef struct {
-  char *name;
-  void (*fn)(test_t *);
-} test_defn_t;
-
-print_t tout = printerFromFile(2, NULL);
-
-void testFail(test_t *t, str_t desc) {
-  t->failed++;
-  printStr(tout, strC("FAILED: Case #"));
-  printU64(tout, t->failed + t->passed);
-  if (strNonEmpty(desc)) {
-    printStr(tout, strC(", "));
-    printStr(tout, desc);
-  }
-  printStr(tout, strC("\n"));
-}
-
-void testPass(test_t *t) {
-  t->passed++;
-}
-
-#define assertTrue(t, bln, desc) if (bln) testPass(t); else testFail(t, desc)
-#define assertFalse(t, bln, desc) assertTrue(t, !(bln), desc)
-
-size runtests(test_defn_t *tests, size num_tests, bool verbose) {
-  size total_passed = 0;
-  size total_failed = 0;
-  
-  for (size i=0; i<num_tests; i++) {
-    test_t t = {0};
-
-    if (verbose) {
-      printStr(tout, strC("["));
-      printU64F(tout, i+1, (format_t){.right = 1, .width=4});
-      printStr(tout, strC("] "));
-      printStr(tout, strFromC(tests[i].name));
-      printStr(tout, strC("\n"));
-    }
-    
-    tests[i].fn(&t);
-
-    if (verbose) {
-      printStr(tout, strC("    passed="));
-      printU64(tout, t.passed);
-      printStr(tout, strC(" failed="));
-      printU64(tout, t.failed);
-      printStr(tout, strC("\n"));
-    }
-
-    total_passed += t.passed;
-    total_failed += t.failed;
-  }
-
-  if (verbose) {
-    printStr(tout, strC("\n"));
-  }
-
-  printStr(tout, strC("Results: passed="));
-  printU64(tout, total_passed);
-  printStr(tout, strC(" failed="));
-  printU64(tout, total_failed);
-  printStr(tout, strC("\n"));
-
-  return total_failed;
-}
-
 /* taken from wikipedia */
 char phrase1[] = "Mình nói tiếng Việt";
 char phrase2[] = "𨉟呐㗂越";
@@ -91,8 +20,9 @@ void test_strLen_shouldReturnZero(test_t *t) {
 }
 
 void test_strLen_shouldCountUtf8Characters(test_t *t) {
-  byte scratch[1024] = {0};
-  buf_t buf = bufFromArray(scratch);
+  byte buf_data[1024] = {0};
+  buf_t buf = bufFromC(buf_data);
+  print_t p = bufPrinter(&buf);
   
   struct {str_t s; size len; size bytes;} examples[] = {
     { strC(phrase1), 19, 25 },
@@ -101,13 +31,17 @@ void test_strLen_shouldCountUtf8Characters(test_t *t) {
 
   for (size i=0; i<countof(examples); i++) {
     bufClear(&buf);
-    bufAppendStr(&buf, strC("char length for phrase: "));
-    bufAppendStr(&buf, examples[i].s);
+    printStr(p, strC("char length for phrase <<"));
+    printStr(p, examples[i].s);
+    printStr(p, strC(">> expecting: "));
+    printU64(p, examples[i].len);
     assertTrue(t, strLen(examples[i].s) == examples[i].len, strFromBuf(buf));
 
     bufClear(&buf);
-    bufAppendStr(&buf, strC("byte length for phrase: "));
-    bufAppendStr(&buf, examples[i].s);
+    printStr(p, strC("byte length for phrase <<"));
+    printStr(p, examples[i].s);
+    printStr(p, strC(">> expecting "));
+    printU64(p, examples[i].bytes);
     assertTrue(t, bytesLen(bytesFromStr(examples[i].s)) == examples[i].bytes, strFromBuf(buf));
   }  
 }
@@ -309,5 +243,5 @@ int main(int argc, char **argv) {
     {"utf8CharEquals Basic functionality", test_utf8CharEquals_shouldMatchSameCharacter},
   };
 
-  return (int)runtests(tests, countof(tests), verbose);
+  return (int)testRunner(tests, countof(tests), verbose);
 }

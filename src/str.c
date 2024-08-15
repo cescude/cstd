@@ -43,17 +43,6 @@ bool strEquals(str_t s, str_t t) {
   return bcmp(s.beg, t.beg, s_len) == 0;
 }
 
-/*
-  Appends s to the end of b, returning the combined string. No real
-  indication of error except there's no more room in the buffer (ie.,
-  use if you either 1) know you have enough space, or 2) don't care if
-  you run out).
-*/
-str_t strAppend(buf_t *b, str_t s) {
-  bufAppendStr(b, s);
-  return strFromBuf(*b);
-}
-
 bool strStartsWith(str_t s, str_t prefix) {
   if (prefix.beg == NULL) return 1;
   

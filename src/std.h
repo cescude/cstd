@@ -115,7 +115,8 @@ bool fdPrintU64F(int fd, buf_t *buf, uint64_t s, format_t f);
 bool fdPrintI64(int fd, buf_t *buf, int64_t n);
 bool fdPrintI64F(int fd, buf_t *buf, int64_t s, format_t f);
 
-bool printFlush(print_t p); 	/* flush out any internal state */
+bool printFlush(print_t p);	    /* flush out any internal state */
+#define printC(p, cstr) printStr(p, strC(cstr))
 bool printStr(print_t p, str_t s);
 bool printStrF(print_t p, str_t s, format_t f);
 bool printChar(print_t p, utf8_char_t c);

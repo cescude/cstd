@@ -127,6 +127,32 @@ void test_strStartsWith_shouldReturn1WhenPrefixed(test_t *t) {
   }
 }
 
+void test_strDropChars_shouldDropChars(test_t *t) {
+  struct { str_t str, expected; size count; } cases[] = {
+    { strC("Hey string"), strC("Hey string"), 0 },
+    { strC("Hey string"), strC("ring"), 6 },
+    { strC("Hey string"), strC(""), 100 },
+    { strC("𨉟呐㗂越"), strC("㗂越"), 2 },
+  };
+
+  byte data[64] = {0};
+  buf_t buf = bufFromC(data);
+  print_t p = bufPrinter(&buf);
+  
+  for (size i=0; i<countof(cases); i++) {
+    bufClear(&buf);
+    printC(p, "Dropping ");
+    printU64(p, cases[i].count);
+    printC(p, " characters from <<");
+    printStr(p, cases[i].str);
+    printC(p, ">>, expected <<");
+    printStr(p, cases[i].expected); printC(p, ">>");
+    
+    assertTrue(t, strEquals(strDropChars(cases[i].str, cases[i].count),
+			    cases[i].expected), strFromBuf(buf));
+  }
+}
+
 void test_strTrimLeft_basicFunctionality(test_t *t) {
   struct { str_t src, chars, result; } cases[] = {
     { strC("one"), strC(""), strC("one") }, /* nothing to trim here */
@@ -235,6 +261,7 @@ int main(int argc, char **argv) {
     {"strEquals should return false on different bytes", test_strEquals_shouldReturnFalse},
     {"strEquals should handle overlapping memory", test_strEquals_shouldHandleOverlappingMemory},
     {"strStartsWith should return 1 when prefixed", test_strStartsWith_shouldReturn1WhenPrefixed},
+    {"strDropChars should drop the specified # of characters", test_strDropChars_shouldDropChars},
     {"strTrimLeft basic functionality", test_strTrimLeft_basicFunctionality},
     {"strTrimRight Basic functionality", test_strTrimRight_basicFunctionality},
     {"strTakeLineWrapped Should return full text for short rows", test_strTakeLineWrapped_shouldReturnFullTextForShortRows},

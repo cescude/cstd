@@ -11,8 +11,6 @@ bool strNonEmpty(str_t s);
 bool strEquals(str_t s, str_t t);
 bool strStartsWith(str_t s, str_t prefix);
 
-str_t strAppend(buf_t *b, str_t s);
-
 str_t strDropChars(str_t s, size count);
 
 utf8_char_t strFirstChar(str_t s);

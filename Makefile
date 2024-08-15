@@ -17,7 +17,7 @@ libstd.a: std.o str.o bytes.o utf8.o opt.o test.o
 std.o: src/std.h src/std.c
 	${CC} ${CFLAGS} -c src/std.c
 
-str.o: src/std.h src/str.c
+str.o: src/std.h src/str.h src/str.c
 	${CC} ${CFLAGS} -c src/str.c
 
 bytes.o: src/std.h src/bytes.h src/bytes.c

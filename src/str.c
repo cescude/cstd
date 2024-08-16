@@ -55,6 +55,17 @@ bool strStartsWith(str_t s, str_t prefix) {
   return strEquals(s, prefix);
 }
 
+str_t strTakeChars(str_t src, size count) {
+  str_t result = src;
+  
+  do {
+  } while (count-- > 0 && strNextChar(&src));
+  
+  result.end = src.beg;
+  
+  return result;
+}
+
 str_t strDropChars(str_t s, size count) {
   return utf8DropChars(s, count);
 }

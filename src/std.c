@@ -1,5 +1,8 @@
 #include "std.h"
 
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -102,6 +105,21 @@ str_t fdMemMap(int fd) {
   return (str_t){NULL, 0};
 }
 
+int fdOpen(str_t filename, int flags) {
+    size fn_len = bytesLen(bytesFromStr(filename));
+    if (fn_len >= PATH_MAX-1) {
+        return ENAMETOOLONG;
+    }
+        
+    char zpath[PATH_MAX] = {0};
+    memcpy(zpath, filename.beg, fn_len);
+    return open(zpath, flags);
+}
+
+int fdClose(int fd) {
+    return close(fd);
+}
+    
 bool fdFlush(int fd, buf_t *bufp) {
   /* nothing to flush... */
   if (bufp == NULL || bufp->ptr == NULL || bufp->len == 0) {
@@ -215,6 +233,32 @@ bool fdPrintI64F(int fd, buf_t *buf, int64_t n, format_t f) {
   return fdPrintStrF(fd, buf, (str_t){data, data + len}, f);
 }
 
+bool fdPrintBytes(int fd, buf_t *buf, bytes_t bs) {
+  return fdPrintBytesF(fd, buf, bs, (format_t){0});
+}
+
+bool fdPrintBytesF(int fd, buf_t *buf, bytes_t bs, format_t f) {
+  /* no formatting options yet... */
+  if (bytesIsEmpty(bs)) return 1;
+  
+  size bs_len = bytesLen(bs);
+  char data[4] = {0};
+
+  int len = snprintf(data, sizeof(data), "%xd", bs.beg[0]);
+  if (!fdPrintStrF(fd, buf, (str_t){data, &data[len]}, f)) {
+    return 0;
+  }
+  
+  for (size i=1; i<bs_len; i++) {
+    len = snprintf(data, sizeof(data), " %xd", bs.beg[i]);
+    if (!fdPrintStrF(fd, buf, (str_t){data, &data[len]}, f)) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
 bool printFlush(print_t p) {
   return fdFlush(p.fd, p.buf);
 }
@@ -249,4 +293,12 @@ bool printI64(print_t p, int64_t n) {
 
 bool printI64F(print_t p, int64_t n, format_t f) {
   return fdPrintI64F(p.fd, p.buf, n, f);
+}
+
+bool printBytes(print_t p, bytes_t bs) {
+  return printBytesF(p, bs, (format_t){0});
+}
+
+bool printBytesF(print_t p, bytes_t bs, format_t f) {
+  return fdPrintBytesF(p.fd, p.buf, bs, (format_t){0});
 }

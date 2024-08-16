@@ -105,6 +105,9 @@ str_t bufAppendStr(buf_t *buf, str_t str);
 bool fdReadIntoBuf(int fd, buf_t *buf);
 str_t fdMemMap(int fd);
 
+int fdOpen(str_t filename, int flags);
+int fdCLose(int fd);
+
 bool fdFlush(int fd, buf_t *buf);
 bool fdPrintStr(int fd, buf_t *buf, str_t s);
 bool fdPrintStrF(int fd, buf_t *buf, str_t s, format_t f);
@@ -114,6 +117,8 @@ bool fdPrintU64(int fd, buf_t *buf, uint64_t n);
 bool fdPrintU64F(int fd, buf_t *buf, uint64_t s, format_t f);
 bool fdPrintI64(int fd, buf_t *buf, int64_t n);
 bool fdPrintI64F(int fd, buf_t *buf, int64_t s, format_t f);
+bool fdPrintBytes(int fd, buf_t *buf, bytes_t bs);
+bool fdPrintBytesF(int fd, buf_t *buf, bytes_t bs, format_t f);
 
 bool printFlush(print_t p);	    /* flush out any internal state */
 #define printC(p, cstr) printStr(p, strC(cstr))
@@ -125,6 +130,8 @@ bool printU64(print_t p, uint64_t n);
 bool printU64F(print_t p, uint64_t s, format_t f);
 bool printI64(print_t p, int64_t n);
 bool printI64F(print_t p, int64_t s, format_t f);
+bool printBytes(print_t p, bytes_t bs);
+bool printBytesF(print_t p, bytes_t bs, format_t f);
 
 /* typedef struct { */
 /*   int fd; */
@@ -143,3 +150,4 @@ bool printI64F(print_t p, int64_t s, format_t f);
 #include "utf8.h"
 #include "opt.h"
 #include "test.h"
+#include "reader.h"

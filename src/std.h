@@ -81,6 +81,7 @@ void bufClear(buf_t *buf);
   
 */
 void bufDropBytes(buf_t *buf, size sz);
+void bufDropTo(buf_t *buf, char *ptr);
 
 /*
   Returns str w/ any data not appended, so if the returned str has
@@ -147,6 +148,7 @@ bool printBytesF(print_t p, bytes_t bs, format_t f);
 
 #include "str.h"
 #include "bytes.h"
+#include "iter.h"
 #include "utf8.h"
 #include "opt.h"
 #include "test.h"

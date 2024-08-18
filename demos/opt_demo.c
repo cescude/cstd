@@ -61,57 +61,46 @@ int main(int argc, char **argv) {
     printC(stdout, "\n");
 
     if (strNonEmpty(filename)) {
-        char bucket[1<<10] = {0};
-        buf_t buf = bufFromC(bucket);
-
-        int fd = fdOpen(filename, O_RDONLY);
-        if (fd < 0) {
-            printC(stdout, "Bad times! ");
-            printStr(stdout, filename);
-            printC(stdout, " wasn't found or there was some kind of error I guess");
-            exit(99);
+        int fd = 0;
+        if (!strEquals(filename, strC("-"))) {
+            fd = fdOpen(filename, O_RDONLY);
+            if (fd < 0) {
+                printC(stdout, "Bad times! ");
+                printStr(stdout, filename);
+                printC(stdout, " wasn't found or there was some kind of error I guess");
+                exit(99);
+            }
         }
-        
+
+        char data[1<<10] = {0};
+        buf_t buf = bufFromC(data);
+
         while (fdReadIntoBuf(fd, &buf)) {
-            str_t buf_line = strFirstLine(strFromBuf(buf));
+            iter_t it = iterFromBuf(buf);
+            while (iterTakeToStr(&it, strC("\n")) && !iterLast(it)) {
+                str_t s = iterStr(it);
 
-            do {
-                do {
-                    str_t line = strTakeLineWrapped(strTrimLeft(buf_line, strC(" ")), columns);
-                    buf_line.beg = line.end;
+                printC(stdout, "[");
+                printStr(stdout, strTrimRight(s, strC("\n")));
+                printC(stdout, "]\n");
+            }
 
-                    printStr(stdout, line);
-                    printC(stdout, "\n");
-                } while (strNonEmpty(buf_line));
-
-                if (buf_line.end < buf.ptr + buf.len) {
-                    bufDropBytes(&buf, buf_line.end - buf.ptr + 1);
-                } else {
-                    bufDropBytes(&buf, buf_line.end - buf.ptr);
-                }
-
-                buf_line = strFirstLine(strFromBuf(buf));
-            } while (buf_line.end < buf.ptr + buf.len);
+            if (it.beg == buf.ptr) {
+                printC(stdout, "((");
+                printStr(stdout, strTrimRight(iterStr(it), strC("\n")));
+                printC(stdout, "))\n");
+                bufClear(&buf);
+            } else {
+                bufDropTo(&buf, it.beg);
+            }
         }
+
+        printC(stdout, "<<");
+        printStr(stdout, strFromBuf(buf));
+        printC(stdout, ">>\n");
 
         close(fd);
     }
 
-    text = strTrim(text, strC(" "));
-    if (strNonEmpty(text)) {
-        for (size i=0; i<columns; i++) {
-            printChar(stdout, utf8CharFromC('v'));
-        }
-        printStr(stdout, strC("\n"));
-  
-        while (strNonEmpty(text)) {
-            str_t line = strTakeLineWrapped(text, columns);
-            printStr(stdout, strTrim(line, strC(" \n")));
-            printStr(stdout, strC("\n"));
-            text.beg = line.end;
-            text = strTrimLeft(text, strC(" "));
-        }
-    }
-  
     return 0;
 }

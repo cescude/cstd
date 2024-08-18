@@ -244,3 +244,31 @@ bool strMaybeParseInt(str_t s, int *result) {
   *result = negative ? -tmp : tmp;
   return 1;
 }
+
+/* str_iter_t strSplitIter(str_t s) { */
+/*     return (str_iter_t){ */
+/*         (str_t){ s.beg, s.beg }, */
+/*         s.end */
+/*     }; */
+/* } */
+
+/* bool strNextSplit(str_iter_t *s, str_t sep) { */
+/*     str_t scanner = (str_t){ */
+/*         s->str.end, */
+/*         s->str.end + (sep.end - sep.beg) */
+/*     }; */
+    
+/*     while (scanner.end < s->cap) { */
+/*         if (strEquals(scanner, sep)) { */
+/*             break; */
+/*         } */
+/*         size char_width = utf8BytesNeeded(*scanner.beg); */
+/*         scanner.beg += char_width; */
+/*         scanner.end += char_width; */
+/*     } */
+
+/*     s->str.beg = s->str.end; */
+/*     s->str.end = scanner.end; */
+
+/*     return s->str.beg < s->cap; */
+/* } */

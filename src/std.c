@@ -14,6 +14,13 @@ void bufClear(buf_t *buf) {
   buf->len = 0;
 }
 
+void bufDropTo(buf_t *buf, char *ptr) {
+    if (ptr < buf->ptr) {
+        return;
+    }
+    bufDropBytes(buf, ptr - buf->ptr);
+}
+
 void bufDropBytes(buf_t *buf, size sz) {
   sz = sz > buf->len ? buf->len : sz;
   sz = sz < 0 ? 0 : sz;
@@ -72,31 +79,26 @@ str_t bufAppendStr(buf_t *bufp, str_t str) {
 }
 
 bool fdReadIntoBuf(int fd, buf_t *bufp) {
-  buf_t b = *bufp;
+    buf_t b = *bufp;
   
-  while (b.len < b.cap) {
-    ssize_t bytes_read = read(fd, b.ptr + b.len, b.cap - b.len);
+    while (b.len < b.cap) {
+        ssize_t bytes_read = read(fd, b.ptr + b.len, b.cap - b.len);
 
-    if (bytes_read == 0 && b.len == 0) {
-      /* no bytes to read (eof) AND nothing for the caller to process */
-      return 0;
-    } else if (bytes_read == 0) {
-      /*
-	ok, we got eof, however some data was read so we're going to
-	indicate success here, and let the next invocation fail.
-      */
-      break;
+        if (bytes_read == 0) {
+            bool any_read = bufp->len != b.len;
+            *bufp = b;
+            return any_read;
+        }
+    
+        if (bytes_read < 0) {
+            return 0;			/* error */
+        }
+
+        b.len += bytes_read;
     }
 
-    if (bytes_read < 0) {
-      return 0;			/* error */
-    }
-
-    b.len += bytes_read;
-  }
-
-  *bufp = b;
-  return 1;
+    *bufp = b;
+    return 1;
 }
 
 str_t fdMemMap(int fd) {

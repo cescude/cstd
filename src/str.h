@@ -28,3 +28,4 @@ str_t strTakeLineWrapped(str_t text, size cols);
 uint64_t strHash_djb2(str_t src);
 
 bool strMaybeParseInt(str_t s, int *result);
+

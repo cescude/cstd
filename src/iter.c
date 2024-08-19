@@ -46,7 +46,7 @@ bool iterDone(iter_t it) {
 }
 
 bool iterTakeToChar(iter_t *it, utf8_char_t u) {
-    if (iterLast(*it)) {
+    if (it->tail == 0) {
         *it = (iter_t){0};      /* completely clear out this iterator */
         return 0;
     }
@@ -78,7 +78,7 @@ bool iterTakeToAnyChar(iter_t *it, str_t needles) {
 }
 
 bool iterTakeToStr(iter_t *it, str_t sep) {
-    if (iterLast(*it)) {
+    if (it->tail == 0) {
         *it = (iter_t){0};    /* Completely clear out this iterator */
         return 0;
     }

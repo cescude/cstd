@@ -73,34 +73,34 @@ int main(int argc, char **argv) {
         }
 
         char data[1<<10] = {0};
-        buf_t buf = bufFromC(data);
-
-        while (fdReadIntoBuf(fd, &buf)) {
-            iter_t it = iterFromBuf(buf);
-            while (iterTakeToStr(&it, strC("\n")) && !iterLast(it)) {
-                str_t s = iterStr(it);
-
-                printC(stdout, "[");
-                printStr(stdout, strTrimRight(s, strC("\n")));
-                printC(stdout, "]\n");
+        reader_t rdr = readInit(fd, data, sizeof(data));
+        
+        while (readToStr(&rdr, strC("\n"))) {
+            str_t s = readStr(rdr);
+            
+            if (readWasTruncated(rdr)) {
+                printC(stdout, "truncated");
             }
 
-            if (it.beg == buf.ptr) {
-                printC(stdout, "((");
-                printStr(stdout, strTrimRight(iterStr(it), strC("\n")));
-                printC(stdout, "))\n");
-                bufClear(&buf);
-            } else {
-                bufDropTo(&buf, it.beg);
-            }
+            printC(stdout, "[");
+            printStr(stdout, strTrimRight(s, strC("\n")));
+            printC(stdout, "]\n");
         }
-
-        printC(stdout, "<<");
-        printStr(stdout, strFromBuf(buf));
-        printC(stdout, ">>\n");
-
+        
         close(fd);
     }
 
+    if (show_text) {
+        while (strNonEmpty(text)) {
+            str_t w = strTakeLineWrapped(text, columns);
+            text.beg = w.end;
+            text = strTrimLeft(text, strC(" "));
+
+            printC(stdout, "[");
+            printStr(stdout, w);
+            printC(stdout, "]\n");
+        }
+    }
+    
     return 0;
 }

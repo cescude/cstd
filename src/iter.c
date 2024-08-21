@@ -74,7 +74,39 @@ bool iterTakeToChar(iter_t *it, utf8_char_t u) {
 }
 
 bool iterTakeToAnyChar(iter_t *it, str_t needles) {
-    return 0;
+    if (it->tail == 0) {
+        *it = (iter_t){0};    /* Completely clear out this iterator */
+        return 0;
+    }
+
+    /* skip past prior selection */
+    it->beg = it->end;
+
+    /* Create a search string encompassing the remainder of the
+       iterator.
+    */
+    str_t s = (str_t){it->end, it->tail};
+
+    if (strNonEmpty(s)) {
+        do {
+            size char_width = utf8BytesNeeded(*s.beg);
+            char *n = needles.beg;
+            while (n+char_width <= needles.end) {
+                if (memcmp(s.beg, n, char_width) == 0) {
+                    strNextChar(&s);
+                    it->end = s.beg;
+                    return 1;
+                }
+                n += utf8BytesNeeded(*n);
+            }
+
+        } while (strNextChar(&s));
+    }
+
+    it->end = s.beg;
+    it->tail = 0; /* we didn't find the character, so this is the last iteration */
+    
+    return 1;
 }
 
 bool iterTakeToStr(iter_t *it, str_t sep) {

@@ -26,6 +26,7 @@ void test_iterTakeToChar_shouldIterateOverAString(test_t *t) {
         { strC("one "), utf8CharFromC(' '), 2 },
         { strC("one two three"), utf8CharFromC(' '), 3 },
         { strC("one two three "), utf8CharFromC(' '), 4 },
+        { strC("one😅two😅three"), utf8FirstChar(strC("😅")), 3 },
     };
 
     for (size i=0; i<countof(cases); i++) {
@@ -37,6 +38,27 @@ void test_iterTakeToChar_shouldIterateOverAString(test_t *t) {
         }
 
         assertTrue(t, segments == cases[i].expected_segments, nilstr);
+    }
+}
+
+void test_iterTakeToAnyChar_shouldIterateOverAString(test_t *t) {
+    str_t stop_chars = strC(" \t😅");
+    struct { str_t src; size expected_segments; } cases[] = {
+        { strC(""), 1 },
+        { strC("one"), 1 },
+        { strC("one😅two three\tfour"), 4 },
+        { strC("one two😅three\t"), 4 },
+    };
+
+    for (size i=0; i<countof(cases); i++) {
+        iter_t it = iterFromStr(cases[i].src);
+
+        size segments = 0;
+        while (iterTakeToAnyChar(&it, stop_chars)) {
+            segments++;
+        }
+
+        assertTrue(t, segments == cases[i].expected_segments, cases[i].src);
     }
 }
 
@@ -83,6 +105,7 @@ int main(int argc, char **argv) {
     test_defn_t tests[] = {
         {"iterStr should return the current selection", test_iterStr_shouldReturnTheCurrentSelection},
         {"iterTakeToChar should iterate over a string", test_iterTakeToChar_shouldIterateOverAString},
+        {"iterTakeToAnyChar should iterate over a string", test_iterTakeToAnyChar_shouldIterateOverAString},
         {"iterTakeToStr should iterate over a string", test_iterTakeToStr_shouldIterateOverAString},
     };
 

@@ -33,20 +33,30 @@ str_t utf8DropChars(str_t s, size count) {
 }
 
 size utf8BytesNeeded(char head) {
-  if ((head & 0x80) == 0) {
-    return 1;
-  } else if ((head & 0xC0) == 0x80) {
-    abort();	 /* head is in the middle of a multi-byte character */
-  } else if ((head & 0xE0) == 0xC0) {
-    return 2;
-  } else if ((head & 0xF0) == 0xE0) {
-    return 3;
-  } else if ((head & 0xF8) == 0xF0) {
-    return 4;
-  }
+    /*
+      Adapted from https://codereview.stackexchange.com/a/282094
+     */
+    unsigned char ch = (unsigned char)head;
+    return
+        1 +                     /* ie., (ch >= 0) */
+        (ch >= 0xC0) +
+        (ch >= 0xE0) +
+        (ch >= 0xF0);
+    
+    /* if ((head & 0x80) == 0) { */
+    /*     return 1; */
+    /* } else if ((head & 0xC0) == 0x80) { */
+    /*     abort();	 /\* head is in the middle of a multi-byte character *\/ */
+    /* } else if ((head & 0xE0) == 0xC0) { */
+    /*     return 2; */
+    /* } else if ((head & 0xF0) == 0xE0) { */
+    /*     return 3; */
+    /* } else if ((head & 0xF8) == 0xF0) { */
+    /*     return 4; */
+    /* } */
 
-  /* Unsure what we were passed here :grimace: */
-  abort();
+    /* /\* Unsure what we were passed here :grimace: *\/ */
+    /* abort(); */
 }
 
 size utf8CharLen(utf8_char_t ch) {

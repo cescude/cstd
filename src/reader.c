@@ -1,17 +1,17 @@
 #include "std.h"
 
-reader_t readInit(int fd, byte *buffer, size len) {
+reader_t readInit(int fd, buf_t *buf) {
     return (reader_t){
         .fd = fd,
-        .buffer = bufFromPtr(buffer, len),
         .it = (iter_t){0},
+        .buffer = buf,
     };
 }
 
 bool readWasTruncated(reader_t reader) {
     return
-        reader.buffer.ptr == reader.it.beg &&
-        reader.buffer.len == (reader.it.end - reader.it.beg);
+        reader.buffer->ptr == reader.it.beg &&
+        reader.buffer->len == (reader.it.end - reader.it.beg);
 }
 
 str_t readStr(reader_t reader) {
@@ -20,9 +20,9 @@ str_t readStr(reader_t reader) {
 
 bool readToStr(reader_t *reader, str_t separator) {
     int fd = reader->fd;
-    buf_t buf = reader->buffer;
+    buf_t buf = *reader->buffer;
     iter_t it = reader->it;
-    
+
     bool has_token = iterTakeToStr(&it, separator);
 
     if (!has_token || iterLast(it)) {
@@ -44,7 +44,7 @@ bool readToStr(reader_t *reader, str_t separator) {
     }
 
     reader->it = it;
-    reader->buffer = buf;
+    *reader->buffer = buf;
 
     if (iterDone(it)) {
         return 0;

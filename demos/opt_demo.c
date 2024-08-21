@@ -43,48 +43,48 @@ int main(int argc, char **argv) {
         exit(show_help ? 0 : 99);
     }
 
-    print_t stdout = printerFromFile(STDOUT_FILENO, NULL);
-    printStr(stdout, strFromC("verbose="));
-    printU64(stdout, (uint64_t)verbose);
-    printStr(stdout, strFromC(", energy="));
-    printI64(stdout, energy);
-    printStr(stdout, strFromC(", filename="));
-    printStr(stdout, filename);
-    printStr(stdout, strFromC(", rest_idx="));
-    printU64(stdout, rest_idx);
-    printFlush(stdout);
+    print_t out = printInitUnbuffered(STDOUT_FILENO);
+    printStr(out, strFromC("verbose="));
+    printNum(out, (uint64_t)verbose);
+    printStr(out, strFromC(", energy="));
+    printNum(out, energy);
+    printStr(out, strFromC(", filename="));
+    printStr(out, filename);
+    printStr(out, strFromC(", rest_idx="));
+    printNum(out, rest_idx);
+    printFlush(out);
 
     for (ptrdiff_t i=rest_idx; i<argc; i++) {
-        printC(stdout, " >> ");
-        printStr(stdout, strFromC(argv[i]));
+        printC(out, " >> ");
+        printStr(out, strFromC(argv[i]));
     }
-    printC(stdout, "\n");
+    printC(out, "\n");
 
     if (strNonEmpty(filename)) {
         int fd = 0;
         if (!strEquals(filename, strC("-"))) {
-            fd = fdOpen(filename, O_RDONLY);
-            if (fd < 0) {
-                printC(stdout, "Bad times! ");
-                printStr(stdout, filename);
-                printC(stdout, " wasn't found or there was some kind of error I guess");
+            if (!fdOpen(filename, &fd, O_RDONLY)) {
+                printC(out, "Bad times! ");
+                printStr(out, filename);
+                printC(out, " wasn't found or there was some kind of error I guess");
                 exit(99);
             }
         }
 
-        char data[1<<10] = {0};
-        reader_t rdr = readInit(fd, data, sizeof(data));
+        char read_data[1<<10] = {0};
+        buf_t read_buf = bufFromC(read_data);
+        reader_t rdr = readInit(fd, &read_buf);
         
         while (readToStr(&rdr, strC("\n"))) {
-            str_t s = readStr(rdr);
+            str_t s = iterStr(rdr.it);
             
             if (readWasTruncated(rdr)) {
-                printC(stdout, "truncated");
+                printC(out, "truncated");
             }
 
-            printC(stdout, "[");
-            printStr(stdout, strTrimRight(s, strC("\n")));
-            printC(stdout, "]\n");
+            printC(out, "[");
+            printStr(out, strTrimRight(s, strC("\n")));
+            printC(out, "]\n");
         }
         
         close(fd);
@@ -96,9 +96,9 @@ int main(int argc, char **argv) {
             text.beg = w.end;
             text = strTrimLeft(text, strC(" "));
 
-            printC(stdout, "[");
-            printStr(stdout, w);
-            printC(stdout, "]\n");
+            printC(out, "[");
+            printStr(out, w);
+            printC(out, "]\n");
         }
     }
     

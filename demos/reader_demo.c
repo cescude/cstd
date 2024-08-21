@@ -36,18 +36,21 @@ conf_t getConfiguration(int argc, char **argv) {
 void printFile(print_t out, str_t filename, conf_t cnf) {
     int fd = 0;                 /* default to stdin */
     if (strNonEmpty(filename)) {
-        fd = fdOpen(filename, O_RDONLY);
+        if (!fdOpen(filename, &fd, O_RDONLY)) {
+            return;
+        }
     }
 
-    char buffer[1<<10] = {0};
-    reader_t rdr = readInit(fd, buffer, sizeof(buffer));
+    char read_data[1<<10] = {0};
+    buf_t read_buf = bufFromC(read_data);
+    reader_t rdr = readInit(fd, &read_buf);
 
     size n = 1;
     while (readToStr(&rdr, strC("\n"))) {
-        str_t line = readStr(rdr);
+        str_t line = iterStr(rdr.it);
 
         if (cnf.print_line_number) {
-            printU64(out, n);
+            printNum(out, n);
             printC(out, " ");
         }
         
@@ -59,14 +62,16 @@ void printFile(print_t out, str_t filename, conf_t cnf) {
     }
 
     close(fd);
+
+    printFlush(out);
 }
 
 int main(int argc, char **argv) {
     conf_t cnf = getConfiguration(argc, argv);
 
-    char out_buffer[1<<10] = {0};
-    buf_t out_buf = bufFromC(out_buffer);
-    print_t out = printerFromFile(1, &out_buf); /* TODO: think about renaming printInit() */
+    char out_data[1<<10] = {0};
+    buf_t out_buf = bufFromC(out_data);
+    print_t out = printInit(1, &out_buf);
 
     if (cnf.rest_idx == argc) {
         // No files provided on the commandline, use stdin

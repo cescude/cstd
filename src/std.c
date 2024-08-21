@@ -107,7 +107,7 @@ str_t fdMemMap(int fd) {
   return (str_t){NULL, 0};
 }
 
-int fdOpen(str_t filename, int flags) {
+bool fdOpen(str_t filename, int *fd_out, int flags) {
     size fn_len = bytesLen(bytesFromStr(filename));
     if (fn_len >= PATH_MAX-1) {
         return ENAMETOOLONG;
@@ -115,7 +115,14 @@ int fdOpen(str_t filename, int flags) {
         
     char zpath[PATH_MAX] = {0};
     memcpy(zpath, filename.beg, fn_len);
-    return open(zpath, flags);
+
+    int fd = open(zpath, flags);
+    if (fd < 0) {
+        return 0;
+    }
+
+    *fd_out = fd;
+    return 1;
 }
 
 int fdClose(int fd) {
@@ -259,48 +266,4 @@ bool fdPrintBytesF(int fd, buf_t *buf, bytes_t bs, format_t f) {
   }
 
   return 1;
-}
-
-bool printFlush(print_t p) {
-  return fdFlush(p.fd, p.buf);
-}
-
-bool printStr(print_t p, str_t s) {
-  return fdPrintStr(p.fd, p.buf, s);
-}
-
-bool printStrF(print_t p, str_t s, format_t f) {
-  return fdPrintStrF(p.fd, p.buf, s, f);
-}
-
-bool printChar(print_t p, utf8_char_t c) {
-  return fdPrintChar(p.fd, p.buf, c);
-}
-
-bool printCharF(print_t p, utf8_char_t c, format_t f) {
-  return fdPrintCharF(p.fd, p.buf, c, f);
-}
-
-bool printU64(print_t p, uint64_t n) {
-  return printU64F(p, n, (format_t){0});
-}
-
-bool printU64F(print_t p, uint64_t n, format_t f) {
-  return fdPrintU64F(p.fd, p.buf, n, f);
-}
-
-bool printI64(print_t p, int64_t n) {
-  return printI64F(p, n, (format_t){0});
-}
-
-bool printI64F(print_t p, int64_t n, format_t f) {
-  return fdPrintI64F(p.fd, p.buf, n, f);
-}
-
-bool printBytes(print_t p, bytes_t bs) {
-  return printBytesF(p, bs, (format_t){0});
-}
-
-bool printBytesF(print_t p, bytes_t bs, format_t f) {
-  return fdPrintBytesF(p.fd, p.buf, bs, (format_t){0});
 }

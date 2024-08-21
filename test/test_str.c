@@ -22,7 +22,7 @@ void test_strLen_shouldReturnZero(test_t *t) {
 void test_strLen_shouldCountUtf8Characters(test_t *t) {
     byte buf_data[1024] = {0};
     buf_t buf = bufFromC(buf_data);
-    print_t p = bufPrinter(&buf);
+    print_t p = printInitNoFile(&buf);
   
     struct {str_t s; size len; size bytes;} examples[] = {
         { strC(phrase1), 19, 25 },
@@ -34,14 +34,14 @@ void test_strLen_shouldCountUtf8Characters(test_t *t) {
         printStr(p, strC("char length for phrase <<"));
         printStr(p, examples[i].s);
         printStr(p, strC(">> expecting: "));
-        printU64(p, examples[i].len);
+        printUnsigned(p, examples[i].len);
         assertTrue(t, strLen(examples[i].s) == examples[i].len, strFromBuf(buf));
 
         bufClear(&buf);
         printStr(p, strC("byte length for phrase <<"));
         printStr(p, examples[i].s);
         printStr(p, strC(">> expecting "));
-        printU64(p, examples[i].bytes);
+        printUnsigned(p, examples[i].bytes);
         assertTrue(t, bytesLen(bytesFromStr(examples[i].s)) == examples[i].bytes, strFromBuf(buf));
     }  
 }
@@ -137,12 +137,12 @@ void test_strDropChars_shouldDropChars(test_t *t) {
 
     byte data[64] = {0};
     buf_t buf = bufFromC(data);
-    print_t p = bufPrinter(&buf);
+    print_t p = printInitNoFile(&buf);
   
     for (size i=0; i<countof(cases); i++) {
         bufClear(&buf);
         printC(p, "Dropping ");
-        printU64(p, cases[i].count);
+        printUnsigned(p, cases[i].count);
         printC(p, " characters from <<");
         printStr(p, cases[i].str);
         printC(p, ">>, expected <<");

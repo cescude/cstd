@@ -44,11 +44,6 @@ typedef struct {
 } buf_t;
 
 typedef struct {
-  int fd;
-  buf_t *buf;			/* NULL if unbuffered */
-} print_t;
-
-typedef struct {
   int width;
   bool right;
 } format_t;
@@ -59,9 +54,6 @@ typedef struct {
 #define bytesFromBuf(buf)	      (bytes_t){(buf).ptr, (buf).ptr + (buf).len}
 #define bufFromPtr(ptr, sz)	      (buf_t){ptr, 0, sz}
 #define bufFromC(arr)		      (buf_t){arr, 0, sizeof(arr)}
-#define printerFromFile(fd, buf)      (print_t){fd, buf}
-#define printerUnbuffered(fd)	      (print_t){fd, NULL}
-#define bufPrinter(buf)		      (print_t){0, buf}
 
 /*
   Basically just sets len to 0.
@@ -106,7 +98,7 @@ str_t bufAppendStr(buf_t *buf, str_t str);
 bool fdReadIntoBuf(int fd, buf_t *buf);
 str_t fdMemMap(int fd);
 
-int fdOpen(str_t filename, int flags);
+bool fdOpen(str_t filename, int *fd_out, int flags);
 int fdCLose(int fd);
 
 bool fdFlush(int fd, buf_t *buf);
@@ -121,31 +113,6 @@ bool fdPrintI64F(int fd, buf_t *buf, int64_t s, format_t f);
 bool fdPrintBytes(int fd, buf_t *buf, bytes_t bs);
 bool fdPrintBytesF(int fd, buf_t *buf, bytes_t bs, format_t f);
 
-bool printFlush(print_t p);	    /* flush out any internal state */
-#define printC(p, cstr) printStr(p, strC(cstr))
-bool printStr(print_t p, str_t s);
-bool printStrF(print_t p, str_t s, format_t f);
-bool printChar(print_t p, utf8_char_t c);
-bool printCharF(print_t p, utf8_char_t c, format_t f);
-bool printU64(print_t p, uint64_t n);
-bool printU64F(print_t p, uint64_t s, format_t f);
-bool printI64(print_t p, int64_t n);
-bool printI64F(print_t p, int64_t s, format_t f);
-bool printBytes(print_t p, bytes_t bs);
-bool printBytesF(print_t p, bytes_t bs, format_t f);
-
-/* typedef struct { */
-/*   int fd; */
-/*   buf_t buffer; */
-/*   str_t cursor; */
-/* } reader_t; */
-
-/* #define readerFromC(fd, x) (reader_t){fd, bufFromC(x), (str_t){x, x}} */
-
-/* reader_t readerFromBuf(int fd, buf_t b); /\* No such thing as an unbuffered reader *\/ */
-/* str_t readerTakeLine(reader_t *r); */
-/* str_t readerPeekLine(reader_t r); */
-
 #include "str.h"
 #include "bytes.h"
 #include "iter.h"
@@ -153,3 +120,4 @@ bool printBytesF(print_t p, bytes_t bs, format_t f);
 #include "opt.h"
 #include "test.h"
 #include "reader.h"
+#include "print.h"

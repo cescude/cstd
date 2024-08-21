@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
       str_t line = strFirstLine(strFromBuf(rbuf));
 
       do {
-	printU64F(stdout, strHash_djb2(line), (format_t){.width=20, .right=1});
+	printUnsignedF(stdout, strHash_djb2(line), (format_t){.width=20, .right=1});
 	printCharF(stdout, utf8CharFromC(' '), (format_t){.width=5});
 	printStr(stdout, strFromC(argv[i]));
 	printStr(stdout, strC(" ("));
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     close(fd);
   }
 
-  printU64(stdout, 0xffffFFFFffffFFFF);
+  printUnsigned(stdout, 0xffffFFFFffffFFFF);
   printChar(stdout, utf8CharFromC('\n'));
   
   printFlush(stdout);

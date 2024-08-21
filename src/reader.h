@@ -2,12 +2,12 @@
 
 typedef struct {
     int fd;
-    buf_t buffer;
     iter_t it;
+    buf_t *buffer;
 } reader_t;
 
 /* No such thing as an unbuffered reader */
-reader_t readInit(int fd, byte *buffer, size len);
+reader_t readInit(int fd, buf_t *buf);
 
 /*
   These advance the current iterator, filling unused data from the
@@ -22,9 +22,10 @@ bool readToAnyByte(reader_t *reader, bytes_t bytes);
 bool readSkipBytes(reader_t *reader, size count);
 
 /* These access the value of the current iterator */
-str_t readStr(reader_t reader);
-bytes_t readBytes(reader_t reader);
-void *readStruct(reader_t reader, size sizeof_struct);
+
+/* str_t readStr(reader_t reader); */
+/* bytes_t readBytes(reader_t reader); */
+/* void *readStruct(reader_t reader, size sizeof_struct); */
 
 bool readWasTruncated(reader_t reader);
 

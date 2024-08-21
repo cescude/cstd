@@ -238,52 +238,52 @@ void printWrappedParagraph(print_t p, str_t prefix, size cols, str_t para) {
 }
 
 void optPrintUsage(opts_config_t config, ptrdiff_t cols) {
-  print_t out = printerFromFile(STDOUT_FILENO, NULL);
+    print_t out = printInitUnbuffered(STDOUT_FILENO);
 
-  if (strNonEmpty(config.summary)) {
-    printWrappedParagraph(out, (str_t){0}, cols, config.summary);
-    printStr(out, strC("\n"));
-  }
-
-  if (config.num_opts) {
-    printStr(out, strC("Options:\n"));
-  }
-
-  for (ptrdiff_t idx=0; idx<config.num_opts; idx++) {
-    opt_t opt = config.opts[idx];
-
-    if (opt.type != optrest) {
-      bool has_short = opt.short_name;
-      bool has_long  = strNonEmpty(opt.long_name);
-      
-      if (has_short) {
-	printStr(out, strC("  -"));
-	printChar(out, opt.short_name);
-      } else {
-	printStr(out, strC("    "));
-      }
-
-      if (has_short && has_long) {
-	printStr(out, strC(", --"));
-      } else if (has_long) {
-	printStr(out, strC("  --"));
-      }
-
-      if (has_long) {
-	printStr(out, opt.long_name);
-      }
-
-      if ((has_short || has_long) && strNonEmpty(opt.arg_label)) {
-	printStr(out, strC(" "));
-	printStr(out, opt.arg_label);
-      }
-
-      printStr(out, strC("\n"));
-
-      if (strNonEmpty(opt.description)) {
-	printWrappedParagraph(out, strC("          "), cols, opt.description);
-      }
+    if (strNonEmpty(config.summary)) {
+        printWrappedParagraph(out, (str_t){0}, cols, config.summary);
+        printStr(out, strC("\n"));
     }
-  }
+
+    if (config.num_opts) {
+        printStr(out, strC("Options:\n"));
+    }
+
+    for (ptrdiff_t idx=0; idx<config.num_opts; idx++) {
+        opt_t opt = config.opts[idx];
+
+        if (opt.type != optrest) {
+            bool has_short = opt.short_name;
+            bool has_long  = strNonEmpty(opt.long_name);
+      
+            if (has_short) {
+                printStr(out, strC("  -"));
+                printChar(out, opt.short_name);
+            } else {
+                printStr(out, strC("    "));
+            }
+
+            if (has_short && has_long) {
+                printStr(out, strC(", --"));
+            } else if (has_long) {
+                printStr(out, strC("  --"));
+            }
+
+            if (has_long) {
+                printStr(out, opt.long_name);
+            }
+
+            if ((has_short || has_long) && strNonEmpty(opt.arg_label)) {
+                printStr(out, strC(" "));
+                printStr(out, opt.arg_label);
+            }
+
+            printStr(out, strC("\n"));
+
+            if (strNonEmpty(opt.description)) {
+                printWrappedParagraph(out, strC("          "), cols, opt.description);
+            }
+        }
+    }
 }
 

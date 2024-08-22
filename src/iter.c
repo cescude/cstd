@@ -82,8 +82,9 @@ bool iterTakeToAnyChar(iter_t *it, str_t needles) {
     /* skip past prior selection */
     it->beg = it->end;
 
-    /* Create a search string encompassing the remainder of the
-       iterator.
+    /*
+      Create a search string encompassing the remainder of the
+      iterator.
     */
     str_t s = (str_t){it->end, it->tail};
 

@@ -52,3 +52,38 @@ bool readToStr(reader_t *reader, str_t separator) {
 
     return 1;
 }
+
+bool readToAnyChar(reader_t *reader, str_t chars) {
+    int fd = reader->fd;
+    buf_t buf = *reader->buffer;
+    iter_t it = reader->it;
+
+    bool has_token = iterTakeToAnyChar(&it, chars);
+
+    if (!has_token || iterLast(it)) {
+        if (it.beg > buf.ptr) {
+            bufDropTo(&buf, it.beg);
+        } else {
+            bufClear(&buf);
+        }
+        if (fdReadIntoBuf(fd, &buf)) {
+            it = iterFromBuf(buf);
+
+            /*
+              Try a second time. if the buffer still wasn't large
+              enough, we'll get a partial token.
+             */
+            
+            iterTakeToAnyChar(&it, chars);
+        }
+    }
+
+    reader->it = it;
+    *reader->buffer = buf;
+
+    if (iterDone(it)) {
+        return 0;
+    }
+
+    return 1;
+}

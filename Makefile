@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-g3 -Wall -Wextra -Wconversion -Wdouble-promotion -Wno-unused-parameter -Wno-unused-function -Wno-sign-conversion -fsanitize=undefined -fsanitize-trap
 # CFLAGS=-O3
 
-all: TAGS libstd.a opt_demo reader_demo test_str test_iter test_reader
+all: TAGS libstd.a opt_demo reader_demo test_str test_buf test_iter test_reader
 
 TAGS: src/*.c src/*.h demos/*.c test/*.c
 	find . -type f -name '*.[ch]' | etags -
@@ -11,9 +11,9 @@ clean:
 	find . -type f -name '*.o' | xargs rm
 	rm libstd.a opt_demo test_str
 
-libstd.a: std.o str.o bytes.o iter.o utf8.o opt.o test.o reader.o print.o
+libstd.a: std.o str.o bytes.o buf.o iter.o utf8.o opt.o test.o reader.o print.o
 	rm libstd.a 2>&1 > /dev/null || true
-	ar rcs libstd.a std.o str.o bytes.o iter.o utf8.o opt.o test.o reader.o print.o
+	ar rcs libstd.a std.o str.o bytes.o buf.o iter.o utf8.o opt.o test.o reader.o print.o
 
 std.o: src/std.h src/std.c
 	${CC} ${CFLAGS} -c src/std.c
@@ -30,6 +30,9 @@ iter.o: src/std.h src/iter.h src/iter.c
 utf8.o: src/std.h src/utf8.h src/utf8.c
 	${CC} ${CFLAGS} -c src/utf8.c
 
+buf.o: src/std.h src/buf.h src/buf.c
+	${CC} ${CFLAGS} -c src/buf.c
+
 opt.o: src/std.h src/opt.h src/opt.c
 	${CC} ${CFLAGS} -c src/opt.c
 
@@ -44,6 +47,9 @@ print.o: src/std.h src/print.h src/print.c
 
 test_str: libstd.a test/test_str.c
 	${CC} ${CFLAGS} -o test_str test/test_str.c -L. -lstd
+
+test_buf: libstd.a test/test_buf.c
+	${CC} ${CFLAGS} -o test_buf test/test_buf.c -L. -lstd
 
 test_iter: libstd.a test/test_iter.c
 	${CC} ${CFLAGS} -o test_iter test/test_iter.c -L. -lstd

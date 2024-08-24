@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -34,15 +35,6 @@ typedef struct {
   byte *end;
 } bytes_t;
 
-/*
-  Assume that this structure is pointing at r/w data, that it doesn't own.
- */
-typedef struct {
-  char *ptr;
-  ptrdiff_t len;
-  ptrdiff_t cap;
-} buf_t;
-
 typedef struct {
   int width;
   bool right;
@@ -52,38 +44,16 @@ typedef struct {
 #define strFromBuf(buf)		      (str_t){(buf).ptr, (buf).ptr + (buf).len}
 #define bytesC(cbytes)		      (bytes_t){cbytes, &(cbytes)[sizeof(cbytes)]}
 #define bytesFromBuf(buf)	      (bytes_t){(buf).ptr, (buf).ptr + (buf).len}
-#define bufFromPtr(ptr, sz)	      (buf_t){ptr, 0, sz}
-#define bufFromC(arr)		      (buf_t){arr, 0, sizeof(arr)}
 
-/*
-  Basically just sets len to 0.
- */
-void bufClear(buf_t *buf);
-
-/*
-  Shifts sz bytes off the front of buf.
-
-  If before the buffer looks like...
-  
-    { [A,B,C,D,_], 4, 5 }
-
-  ...and you call bufDrop(&b, 2), after it will look like...
-
-    { [C,D,_,_,_], 2, 5 }
-  
-*/
-void bufDropBytes(buf_t *buf, size sz);
-void bufDropTo(buf_t *buf, char *ptr);
-
-/*
-  Returns str w/ any data not appended, so if the returned str has
-  len == 0, you know the full input is in buf.
-
-  The second version is utf8 aware and won't copy a partial character
-  into buf.
-*/
-str_t bufAppendBytes(buf_t *buf, str_t str); // TODO: move to bytes 
-str_t bufAppendStr(buf_t *buf, str_t str);
+#include "str.h"
+#include "bytes.h"
+#include "buf.h"
+#include "iter.h"
+#include "utf8.h"
+#include "opt.h"
+#include "test.h"
+#include "reader.h"
+#include "print.h"
 
 /*
   Fills data from fd into buf, starting at buf.len (ie., it appends
@@ -112,12 +82,3 @@ bool fdPrintI64(int fd, buf_t *buf, int64_t n);
 bool fdPrintI64F(int fd, buf_t *buf, int64_t s, format_t f);
 bool fdPrintBytes(int fd, buf_t *buf, bytes_t bs);
 bool fdPrintBytesF(int fd, buf_t *buf, bytes_t bs, format_t f);
-
-#include "str.h"
-#include "bytes.h"
-#include "iter.h"
-#include "utf8.h"
-#include "opt.h"
-#include "test.h"
-#include "reader.h"
-#include "print.h"

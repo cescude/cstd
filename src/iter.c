@@ -29,8 +29,9 @@ str_t iterStr(iter_t it) {
     return (str_t){it.beg, it.end};
 }
 
-bytes_t iterBytes(iter_t it) {
-    return (bytes_t){it.beg, it.end};
+str_t iterStrRest(iter_t it) {
+    if (it.tail == 0) return (str_t){0};
+    return (str_t){it.end, it.tail};
 }
 
 bool iterLast(iter_t it) {

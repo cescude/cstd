@@ -16,6 +16,9 @@ iter_t iterFromBuf(buf_t b);
 str_t iterStr(iter_t it);
 bytes_t iterBytes(iter_t it);
 
+str_t iterStrRest(iter_t it);
+bytes_t iterBytesRest(iter_t it);
+
 #define iterStruct(it, type) (type*)_iterStruct(it, sizeof(type))
 void *_iterStruct(iter_t it, size size_of_struct);
 

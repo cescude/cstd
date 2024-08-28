@@ -270,9 +270,12 @@ str_t takeQuotedColumn(str_t line, str_t quot, str_t sep) {
             return line;
         }
 
-        cursor = (str_t){ substr.end, line.end };
-        
-        if (strStartsWith(cursor, sep)) {
+        cursor.beg = substr.end;
+
+        if (strStartsWith(cursor, quot)) {
+            /* Two quotes in a row, that's an escape! */
+            cursor.beg += strBytesLen(quot);
+        } else if (strStartsWith(cursor, sep)) {
             return (str_t){
                 .beg = line.beg,
                 .end = cursor.beg + strBytesLen(sep),
@@ -289,10 +292,10 @@ void test_takeQuotedColumn_shouldParseMiddleColumns(test_t *t) {
     
     struct { str_t line, q, s, expected; } cases[] = {
         { strC("|one|,tw"), pipe, comma, strC("|one|,") },
-        { strC("|one||,tw"), pipe, comma, strC("|one||,") },
         { strC("|on|one|,tw"), pipe, comma, strC("|on|one|,") },
         { strC("|on||one|,tw"), pipe, comma, strC("|on||one|,") },
-        { strC("|on||one||,tw"), pipe, comma, strC("|on||one||,") },
+        { strC("|one,two,three|,tw"), pipe, comma, strC("|one,two,three|,") },
+        { strC("|one||,|two,three|,tw"), pipe, comma, strC("|one||,|two,three|,") },
     };
 
     for (size i=0; i<countof(cases); i++) {
@@ -307,10 +310,10 @@ void test_takeQuotedColumn_shouldParseEndColumns(test_t *t) {
     
     struct { str_t line, q, s, expected; } cases[] = {
         { strC("|one|\n"), pipe, comma, strC("|one|\n") },
-        { strC("|one||\n"), pipe, comma, strC("|one||\n") },
         { strC("|on|one|\n"), pipe, comma, strC("|on|one|\n") },
         { strC("|on||one|\n"), pipe, comma, strC("|on||one|\n") },
-        { strC("|on||one||\n"), pipe, comma, strC("|on||one||\n") },
+        { strC("|one,two,three|\n"), pipe, comma, strC("|one,two,three|\n") },
+        { strC("|one||,|two,three|\n"), pipe, comma, strC("|one||,|two,three|\n") },
     };
 
     for (size i=0; i<countof(cases); i++) {

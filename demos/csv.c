@@ -90,7 +90,7 @@ config_t getConfig(int argc, char **argv) {
     */
     
     iter_t it = iterFromStr(columns);
-    while (iterTakeToStr(&it, strC(","))) {
+    while (iterTakeToStr(&it, strC(",")) && result.num_col_defns < MAX_COL_DEFNS) {
         str_t pattern = strTrimRight(iterStr(it), strC(","));
 
         /*
@@ -142,9 +142,13 @@ config_t getConfig(int argc, char **argv) {
             }
         }
 
-        result.col_defns[result.num_col_defns].from = from - 1;
-        result.col_defns[result.num_col_defns].to = to - 1;
-        result.num_col_defns += 1;
+        if (from > 0 && to > from) {
+            result.col_defns[result.num_col_defns].from = from - 1;
+            result.col_defns[result.num_col_defns].to = to - 1;
+            result.num_col_defns += 1;
+        } else {
+            goto fail;
+        }
     }
 
     return result;
@@ -188,50 +192,77 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-size parseColumns(str_t line, str_t *columns, config_t conf);
-void printNiceColumn(print_t out, str_t c, str_t sep);
+void processCsvHeader(reader_t rdr, str_t *columns, config_t conf);
+void processCsvNormal(reader_t rdr, str_t *columns, config_t conf);
 
 void processCsv(reader_t rdr, str_t *columns, config_t conf) {
+    if (conf.num_col_defns > 0) {
+        processCsvNormal(rdr, columns, conf);
+    } else {
+        processCsvHeader(rdr, columns, conf);
+    }
+}
+
+
+size parseColumns(str_t line, str_t *columns, str_t iquot, str_t isep);
+void printColumn(print_t out, str_t col, bool nice, str_t iquot, str_t oquot);
+
+void processCsvHeader(reader_t rdr, str_t *columns, config_t conf) {
+    if (readToStr(&rdr, strC("\n"))) {
+        str_t line = strTrimRight(readStr(rdr), strC("\r\n"));
+        if (strBytesLen(line) == rdr.buffer->cap) {
+            die(strC("Need to resize the buffer I think"));
+        }
+
+        size num_columns = parseColumns(line, columns, conf.inp_quot, conf.inp_sep);
+
+        if (conf.num_col_defns == 0) {
+            for (size i=0; i<num_columns; i++) {
+                printNum(out, i+1);
+                printC(out, ") ");
+                printColumn(out, columns[i], true, conf.inp_quot, conf.out_quot);
+                printC(out, "\n");
+            }
+        }
+    }
+
+    printFlush(out);
+}
+
+void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
+    assert(conf.num_col_defns > 0, strC("Please don't call this without any column definitions!"));
+    
     while (readToStr(&rdr, strC("\n"))) {
         str_t line = strTrimRight(readStr(rdr), strC("\r\n"));
         if (strBytesLen(line) == rdr.buffer->cap) {
             die(strC("Need to resize the buffer I think"));
         }
 
-        size num_columns = parseColumns(line, columns, conf);
+        size num_columns = parseColumns(line, columns, conf.inp_quot, conf.inp_sep);
+        if (num_columns < 1) continue;
 
-        /*
-          If the user hasn't specified any columns to print, well,
-          print the column names instead!
-         */
-        if (conf.num_col_defns == 0) {
-            for (size i=0; i<num_columns; i++) {
-                printNum(out, i+1);
-                printC(out, ") ");
-                printNiceColumn(out, columns[i], conf.inp_quot);
-                printC(out, "\n");
-            }
-            
-            break;
-        }
+        printColumn(
+            out,
+            columns[conf.col_defns[0].from],
+            conf.print_nicely,
+            conf.inp_quot,
+            conf.out_quot
+        );
 
-        bool first = 1;
         for (size i=0; i<conf.num_col_defns; i++) {
 
             /* For each pattern of columns to print...print them out! */
-            
-            for (size j=conf.col_defns[i].from; j<conf.col_defns[i].to && j<num_columns; j++) {
-                if (first) {
-                    first = 0;
-                } else {
-                    printStr(out, conf.out_sep);
-                }
-                
-                if (conf.print_nicely) {
-                    printNiceColumn(out, columns[j], conf.inp_quot);
-                } else {
-                    printStr(out, columns[j]);
-                }
+            size from = conf.col_defns[i].from;
+            size to = conf.col_defns[i].to;
+
+            /*
+              Ok, so we're adding i==0 so that the very first column
+              is skipped, so we can avoid starting things off with an
+              output separator.
+            */
+            for (size j = from + (i==0); j<to && j<num_columns; j++) {
+                printStr(out, conf.out_sep);
+                printColumn(out, columns[j], conf.print_nicely, conf.inp_quot, conf.out_quot);
             }
         }
 
@@ -241,47 +272,71 @@ void processCsv(reader_t rdr, str_t *columns, config_t conf) {
     printFlush(out);
 }
 
-void printNiceColumn(print_t out, str_t c, str_t quot) {
-    if (strStartsWith(c, quot)) {
-        assert(strEndsWith(c, quot), strC("String should start AND end with a quote!"));
+// TODO add some dang tests me
+void printColumn(print_t out, str_t col, bool nice, str_t iquot, str_t oquot) {
+    bool print_tail_quote = 0;
+    
+    if (strStartsWith(col, iquot)) {
+        assert(strEndsWith(col, iquot), strC("String should start AND end with a quote!"));
 
         /* Drop the prefix & suffix */
-        c.beg += strBytesLen(quot);
-        c.end -= strBytesLen(quot);
-        
-        iter_t it = iterFromStr(c);
-        while (iterTakeToStr(&it, quot)) {
-            str_t segment = iterStr(it);
-            printStr(out, segment);
+        col.beg += strBytesLen(iquot);
+        col.end -= strBytesLen(iquot);
 
-            if (strStartsWith(iterStrRest(it), quot)) {
-                /* Oh, we have two quotes in a row? Skip the second! */
-                assert(
-                    iterTakeToStr(&it, quot), strC("Should have more data to parse!")
-                );
-            }
+        if (!nice) {
+            printStr(out, oquot);
+            print_tail_quote = true;
         }
-    } else {
-        printStr(out, c);
+    }
+
+    str_t segment = (str_t){col.beg, col.beg};
+    while (strNonEmpty(col)) {
+        if (strStartsWith(col, iquot)) {
+            printStr(out, segment);
+            printStr(out, oquot);
+            
+            col.beg += strBytesLen(iquot);
+            segment.beg = col.beg;
+            segment.end = col.beg;
+
+            if (nice && strStartsWith(col, iquot)) {
+                /*
+                  Two quotes in a row? That's just an escape! (ie.,
+                  don't print it)
+                */
+                col.beg += strBytesLen(iquot);
+                segment.beg = col.beg;
+                segment.end = col.beg;
+            }
+        } else {
+            strNextChar(&col);
+            segment.end = col.beg;
+        }
+    }
+    
+    printStr(out, segment);
+
+    if (print_tail_quote) {
+        printStr(out, oquot);
     }
 }
 
 str_t takeUnQuotedColumn(str_t line, str_t sep);
 str_t takeQuotedColumn(str_t line, str_t quot, str_t sep);
 
-size parseColumns(str_t line, str_t *columns, config_t conf) {
+size parseColumns(str_t line, str_t *columns, str_t iquot, str_t isep) {
     int num_columns = 0;
     
-    while (strNonEmpty(line)) {
+    while (strNonEmpty(line) && num_columns < MAX_COLUMNS) {
 
-        str_t c = strStartsWith(line, conf.inp_quot)
-            ? takeQuotedColumn(line, conf.inp_quot, conf.inp_sep)
-            : takeUnQuotedColumn(line, conf.inp_sep);
+        str_t c = strStartsWith(line, iquot)
+            ? takeQuotedColumn(line, iquot, isep)
+            : takeUnQuotedColumn(line, isep);
 
-        if (strEndsWith(c, conf.inp_sep)) {
+        if (strEndsWith(c, isep)) {
             columns[num_columns++] = (str_t){
                 .beg = c.beg,
-                .end = c.end - strBytesLen(conf.inp_sep),
+                .end = c.end - strBytesLen(isep),
             };
         } else {
             columns[num_columns++] = c;

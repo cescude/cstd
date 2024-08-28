@@ -13,7 +13,7 @@ typedef struct {
     str_t out_sep;
     str_t out_quot;
 
-    bool out_raw;          /* Don't use quotes in output formatting */
+    bool print_nicely;          /* Don't use quotes in output formatting */
     bool run_tests;
 
     struct {
@@ -33,7 +33,7 @@ config_t getConfig(int argc, char **argv) {
         .inp_quot = strC("\""),
         .out_sep = strC(","),
         .out_quot = strC("\""),
-        .out_raw = 0,
+        .print_nicely = 0,
         .run_tests = 0,
         .col_defns = {},
         .num_col_defns = 0,
@@ -49,7 +49,7 @@ config_t getConfig(int argc, char **argv) {
         optStr(&result.inp_quot, 'q', "input-quote", "QUOTE", "Input character used by the csv file(s) for quoting columns. Defaults to '\"'."),
         optStr(&result.out_sep, 'F', "ofs", "FIELD_SEPARATOR", "Output field separator to use when processing csv file(s). Defaults to '\"'."),
         optStr(&result.out_quot, 'Q', "output-quote", "QUOTE", "Output character used for quoting csv columns. Defaults to ','."),
-        optBool(&result.out_raw, 'r', "raw", "Output csv data directly, without quoting or column separators."),
+        optBool(&result.print_nicely, 'n', "nice", "Output csv data directly, without quoting or column separators."),
         optBool(&result.run_tests, 0, "run-tests", "Runs unit tests on the program"),
         optBool(&show_help, 'h', "help", "Show this help."),
         optRest(&result.files_idx),
@@ -142,8 +142,8 @@ config_t getConfig(int argc, char **argv) {
             }
         }
 
-        result.col_defns[result.num_col_defns].from = from;
-        result.col_defns[result.num_col_defns].to = to;
+        result.col_defns[result.num_col_defns].from = from - 1;
+        result.col_defns[result.num_col_defns].to = to - 1;
         result.num_col_defns += 1;
     }
 
@@ -189,10 +189,11 @@ int main(int argc, char **argv) {
 }
 
 size parseColumns(str_t line, str_t *columns, config_t conf);
+void printNiceColumn(print_t out, str_t c, str_t sep);
 
 void processCsv(reader_t rdr, str_t *columns, config_t conf) {
     while (readToStr(&rdr, strC("\n"))) {
-        str_t line = strTrimRight(readStr(rdr), strC("\n"));
+        str_t line = strTrimRight(readStr(rdr), strC("\r\n"));
         if (strBytesLen(line) == rdr.buffer->cap) {
             die(strC("Need to resize the buffer I think"));
         }
@@ -207,13 +208,61 @@ void processCsv(reader_t rdr, str_t *columns, config_t conf) {
             for (size i=0; i<num_columns; i++) {
                 printNum(out, i+1);
                 printC(out, ") ");
-                printStr(out, columns[i]);
+                printNiceColumn(out, columns[i], conf.inp_quot);
                 printC(out, "\n");
             }
-            printFlush(out);
-            return;
+            
+            break;
         }
+
+        bool first = 1;
+        for (size i=0; i<conf.num_col_defns; i++) {
+
+            /* For each pattern of columns to print...print them out! */
+            
+            for (size j=conf.col_defns[i].from; j<conf.col_defns[i].to && j<num_columns; j++) {
+                if (first) {
+                    first = 0;
+                } else {
+                    printStr(out, conf.out_sep);
+                }
+                
+                if (conf.print_nicely) {
+                    printNiceColumn(out, columns[j], conf.inp_quot);
+                } else {
+                    printStr(out, columns[j]);
+                }
+            }
+        }
+
+        printStr(out, strC("\n"));
+    }
+
+    printFlush(out);
+}
+
+void printNiceColumn(print_t out, str_t c, str_t quot) {
+    if (strStartsWith(c, quot)) {
+        assert(strEndsWith(c, quot), strC("String should start AND end with a quote!"));
+
+        /* Drop the prefix & suffix */
+        c.beg += strBytesLen(quot);
+        c.end -= strBytesLen(quot);
         
+        iter_t it = iterFromStr(c);
+        while (iterTakeToStr(&it, quot)) {
+            str_t segment = iterStr(it);
+            printStr(out, segment);
+
+            if (strStartsWith(iterStrRest(it), quot)) {
+                /* Oh, we have two quotes in a row? Skip the second! */
+                assert(
+                    iterTakeToStr(&it, quot), strC("Should have more data to parse!")
+                );
+            }
+        }
+    } else {
+        printStr(out, c);
     }
 }
 

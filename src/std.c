@@ -12,8 +12,8 @@ void die(str_t msg) {
     exit(99);
 }
 
-void assert(bool t, str_t fail_msg) {
-    if (!t) {
+void assert(bool test, str_t fail_msg) {
+    if (!test) {
         die(fail_msg);
     }
 }

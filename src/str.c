@@ -21,7 +21,11 @@ bool strNextChar(str_t *s) {
 }
 
 size strLen(str_t s) {
-  return utf8StrLen(s);
+    return utf8StrLen(s);
+}
+
+size strBytesLen(str_t s) {
+    return s.end - s.beg;
 }
 
 bool strIsEmpty(str_t s) {
@@ -53,6 +57,18 @@ bool strStartsWith(str_t s, str_t prefix) {
   
   s.end = s.beg + prefix_len;
   return strEquals(s, prefix);
+}
+
+bool strEndsWith(str_t s, str_t suffix) {
+  if (suffix.beg == NULL) return 1;
+  
+  size suffix_len = suffix.end - suffix.beg;
+
+  if (s.beg == NULL) return suffix_len == 0;
+  if ((s.end - s.beg) < suffix_len) return 0;
+  
+  s.beg = s.end - suffix_len;
+  return strEquals(s, suffix);
 }
 
 str_t strTakeChars(str_t src, size count) {
@@ -102,6 +118,36 @@ str_t strTakeToByte(str_t src, char c) {
     }
   }
   return result;
+}
+
+/*
+  NOTE no tests yet.  TODO: modify the other take-to-* functions to
+  behave like this & the iterators--ie., include the substr so you can
+  tell if the search stopped because it a) found the substr, or b)
+  found the end-of-string.
+*/
+str_t strTakeToStr(str_t src, str_t substr) {
+    str_t cursor = src;
+    do {
+        if (strStartsWith(cursor, substr)) {
+            return (str_t){
+                .beg = src.beg,
+                .end = cursor.beg + strBytesLen(substr),
+            };
+        }
+    } while (strNextChar(&cursor));
+
+    /* Couldn't find substr, so here's the whole thing */
+    return src;
+}
+
+// TODO tests, also, unsure about this API and might remove...
+str_t strDropToStr(str_t src, str_t substr) {
+    str_t cursor = strTakeToStr(src, substr);
+    return (str_t){
+        .beg = cursor.end,
+        .end = src.end,
+    };
 }
 
 str_t strSkipByte(str_t src, char c) {

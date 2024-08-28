@@ -23,7 +23,7 @@ bool readSkipBytes(reader_t *reader, size count);
 
 /* These access the value of the current iterator */
 
-/* str_t readStr(reader_t reader); */
+str_t readStr(reader_t reader);
 /* bytes_t readBytes(reader_t reader); */
 /* void *readStruct(reader_t reader, size sizeof_struct); */
 

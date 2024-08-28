@@ -14,6 +14,7 @@ typedef struct {
     str_t out_quot;
 
     bool out_raw;          /* Don't use quotes in output formatting */
+    bool run_tests;
 
     struct {
         int from, to;          /* 1-based index of columns to print */
@@ -33,6 +34,7 @@ config_t getConfig(int argc, char **argv) {
         .out_sep = strC(","),
         .out_quot = strC("\""),
         .out_raw = 0,
+        .run_tests = 0,
         .col_defns = {},
         .num_col_defns = 0,
         .files_idx = argc,
@@ -48,6 +50,7 @@ config_t getConfig(int argc, char **argv) {
         optStr(&result.out_sep, 'F', "ofs", "FIELD_SEPARATOR", "Output field separator to use when processing csv file(s). Defaults to '\"'."),
         optStr(&result.out_quot, 'Q', "output-quote", "QUOTE", "Output character used for quoting csv columns. Defaults to ','."),
         optBool(&result.out_raw, 'r', "raw", "Output csv data directly, without quoting or column separators."),
+        optBool(&result.run_tests, 0, "run-tests", "Runs unit tests on the program"),
         optBool(&show_help, 'h', "help", "Show this help."),
         optRest(&result.files_idx),
     };
@@ -151,28 +154,176 @@ fail:
     exit(99);
 }
 
+int runTests();
+void processCsv(reader_t rdr, str_t *columns, config_t conf);
+
+str_t columns[MAX_COLUMNS] = {0};
+byte read_bytes[BUFFER_SIZE] = {0};
+buf_t read_buf = bufFromC(read_bytes);
+
+byte write_bytes[1<<10] = {0};
+buf_t write_buf = bufFromC(write_bytes);
+print_t out = printInit(1, &write_buf);
+
 int main(int argc, char **argv) {
     config_t conf = getConfig(argc, argv);
-    print_t p = printInitUnbuffered(1);
-    for (size i=0; i<conf.num_col_defns; i++) {
-        printC(p, "idx=");
-        printNum(p, i);
-        printC(p, ", from=");
-        printNum(p, conf.col_defns[i].from);
-        printC(p, ", to=");
-        printNum(p, conf.col_defns[i].to);
-        printC(p, "\n");
+    if (conf.run_tests) {
+        exit(runTests() > 0);
     }
-
+    
     for (size i=conf.files_idx; i<argc; i++) {
-        printC(p, "file: ");
-        printStr(p, strFromC(argv[i]));
-        printC(p, "\n");
+        int fd;
+        if (fdOpen(strFromC(argv[i]), &fd, O_RDONLY)) {
+            reader_t rdr = readInit(fd, &read_buf);
+            processCsv(rdr, columns, conf);
+            close(fd);
+        }
     }
 
     if (conf.files_idx == argc) {
-        printC(p, "file: <stdin>\n");
+        reader_t rdr = readInit(0, &read_buf);
+        processCsv(rdr, columns, conf);
     }
     
     return 0;
+}
+
+size parseColumns(str_t line, str_t *columns, config_t conf);
+
+void processCsv(reader_t rdr, str_t *columns, config_t conf) {
+    while (readToStr(&rdr, strC("\n"))) {
+        str_t line = strTrimRight(readStr(rdr), strC("\n"));
+        if (strBytesLen(line) == rdr.buffer->cap) {
+            die(strC("Need to resize the buffer I think"));
+        }
+
+        size num_columns = parseColumns(line, columns, conf);
+
+        /*
+          If the user hasn't specified any columns to print, well,
+          print the column names instead!
+         */
+        if (conf.num_col_defns == 0) {
+            for (size i=0; i<num_columns; i++) {
+                printNum(out, i+1);
+                printC(out, ") ");
+                printStr(out, columns[i]);
+                printC(out, "\n");
+            }
+            printFlush(out);
+            return;
+        }
+        
+    }
+}
+
+str_t takeUnQuotedColumn(str_t line, str_t sep);
+str_t takeQuotedColumn(str_t line, str_t quot, str_t sep);
+
+size parseColumns(str_t line, str_t *columns, config_t conf) {
+    int num_columns = 0;
+    
+    while (strNonEmpty(line)) {
+
+        str_t c = strStartsWith(line, conf.inp_quot)
+            ? takeQuotedColumn(line, conf.inp_quot, conf.inp_sep)
+            : takeUnQuotedColumn(line, conf.inp_sep);
+
+        if (strEndsWith(c, conf.inp_sep)) {
+            columns[num_columns++] = (str_t){
+                .beg = c.beg,
+                .end = c.end - strBytesLen(conf.inp_sep),
+            };
+        } else {
+            columns[num_columns++] = c;
+        }
+
+        line.beg = c.end;
+    }
+    
+    return num_columns;
+}
+
+/*
+  Returns the column followed by sep (or not, if last column). For example:
+
+    one,two,three
+
+  The first two columns will include the trailing comma, the last will
+  not.
+*/
+str_t takeUnQuotedColumn(str_t line, str_t sep) {
+    return strTakeToStr(line, sep);
+}
+
+str_t takeQuotedColumn(str_t line, str_t quot, str_t sep) {
+    assert(strStartsWith(line, quot), strC("Scanned line doesn't start with a quote"));
+    
+    str_t cursor = (str_t){
+        .beg = line.beg + strBytesLen(quot),
+        .end = line.end
+    };
+    
+    while (1) {
+        str_t substr = strTakeToStr(cursor, quot);
+        if (substr.end == line.end) {
+            return line;
+        }
+
+        cursor = (str_t){ substr.end, line.end };
+        
+        if (strStartsWith(cursor, sep)) {
+            return (str_t){
+                .beg = line.beg,
+                .end = cursor.beg + strBytesLen(sep),
+            };
+        }
+    }
+
+    assert(false, strC("Unreachable"));
+}
+
+void test_takeQuotedColumn_shouldParseMiddleColumns(test_t *t) {
+    str_t pipe = strC("|");
+    str_t comma = strC(",");
+    
+    struct { str_t line, q, s, expected; } cases[] = {
+        { strC("|one|,tw"), pipe, comma, strC("|one|,") },
+        { strC("|one||,tw"), pipe, comma, strC("|one||,") },
+        { strC("|on|one|,tw"), pipe, comma, strC("|on|one|,") },
+        { strC("|on||one|,tw"), pipe, comma, strC("|on||one|,") },
+        { strC("|on||one||,tw"), pipe, comma, strC("|on||one||,") },
+    };
+
+    for (size i=0; i<countof(cases); i++) {
+        str_t c = takeQuotedColumn(cases[i].line, cases[i].q, cases[i].s);
+        assertTrue(t, strEquals(c, cases[i].expected), cases[i].line);
+    }
+}
+
+void test_takeQuotedColumn_shouldParseEndColumns(test_t *t) {
+    str_t pipe = strC("|");
+    str_t comma = strC(",");
+    
+    struct { str_t line, q, s, expected; } cases[] = {
+        { strC("|one|\n"), pipe, comma, strC("|one|\n") },
+        { strC("|one||\n"), pipe, comma, strC("|one||\n") },
+        { strC("|on|one|\n"), pipe, comma, strC("|on|one|\n") },
+        { strC("|on||one|\n"), pipe, comma, strC("|on||one|\n") },
+        { strC("|on||one||\n"), pipe, comma, strC("|on||one||\n") },
+    };
+
+    for (size i=0; i<countof(cases); i++) {
+        str_t c = takeQuotedColumn(cases[i].line, cases[i].q, cases[i].s);
+        assertTrue(t, strEquals(c, cases[i].expected), cases[i].line);
+    }
+}
+
+int runTests() {
+    test_defn_t tests[] = {
+        {"takeQuotedColumn should parse middle columns", test_takeQuotedColumn_shouldParseMiddleColumns},
+        {"takeQuotedColumn should parse end columns", test_takeQuotedColumn_shouldParseEndColumns},
+    };
+
+    return (int)testRunner(tests, countof(tests), true);
 }

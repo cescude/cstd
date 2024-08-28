@@ -7,6 +7,22 @@
 #include <string.h>
 #include <sys/mman.h>
 
+void die(str_t msg) {
+    errlog(msg);
+    exit(99);
+}
+
+void assert(bool t, str_t fail_msg) {
+    if (!t) {
+        die(fail_msg);
+    }
+}
+
+void errlog(str_t msg) {
+    print_t p = printInitUnbuffered(2);
+    printStr(p, msg);
+}
+
 /* static print_t POUT = printerFromFile(1, NULL); */
 /* static print_t PERR = printerFromFile(2, NULL); */
 

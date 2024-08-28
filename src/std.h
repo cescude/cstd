@@ -55,6 +55,10 @@ typedef struct {
 #include "reader.h"
 #include "print.h"
 
+void die(str_t msg);
+void assert(bool t, str_t fail_msg);
+void errlog(str_t msg);
+
 /*
   Fills data from fd into buf, starting at buf.len (ie., it appends
   file data to the end of the buffer).

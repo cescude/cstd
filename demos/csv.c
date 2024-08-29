@@ -14,7 +14,8 @@ typedef struct {
     str_t out_sep;
     str_t out_quot;
 
-    bool print_nicely;          /* Don't use quotes in output formatting */
+    bool colorize;      /* Print each column with a different color */
+    bool print_nicely;  /* Don't use quotes in output formatting */
     bool run_tests;
 
     struct {
@@ -23,8 +24,10 @@ typedef struct {
 
     size num_col_defns;
     
-    size files_idx;    /* index into argc where the file list begins */
+    size files_idx;   /* index into argc where the file list begins */
 } config_t;
+
+bool parseColumnDefinitions(config_t *conf, str_t columns);
 
 config_t getConfig(int argc, char **argv) {
 
@@ -34,6 +37,7 @@ config_t getConfig(int argc, char **argv) {
         .inp_quot = strC("\""),
         .out_sep = strC(","),
         .out_quot = strC("\""),
+        .colorize = 0,
         .print_nicely = 0,
         .run_tests = 0,
         .col_defns = {},
@@ -45,11 +49,16 @@ config_t getConfig(int argc, char **argv) {
     bool show_help = 0;
     
     opt_t opts[] = {
-        optStr(&columns, 'c', "columns", "PATTERN", "Comma separated list of columns to print (ex. \"-c1,2,3\", \"-c1-3\", \"-c1-5,3-10\""),
+        optStr(&columns, 'c', "columns", "PATTERN",
+               "Comma separated list of columns to print (ex. \"-c1,2,3\", "
+               "\"-c1-3\", \"-c1-5,3-10\". If omitted, prints just the "
+               "column names so you can figure this out."
+        ),
         optStr(&result.inp_sep, 's', "ifs", "FIELD_SEPARATOR", "Input field separator used by the csv file(s), defaults to ','."),
-        optStr(&result.inp_quot, 'q', "input-quote", "QUOTE", "Input character used by the csv file(s) for quoting columns. Defaults to '\"'."),
         optStr(&result.out_sep, 'F', "ofs", "FIELD_SEPARATOR", "Output field separator to use when processing csv file(s). Defaults to '\"'."),
+        optStr(&result.inp_quot, 'q', "input-quote", "QUOTE", "Input character used by the csv file(s) for quoting columns. Defaults to '\"'."),
         optStr(&result.out_quot, 'Q', "output-quote", "QUOTE", "Output character used for quoting csv columns. Defaults to ','."),
+        optBool(&result.colorize, 'C', "color", "Colorize the output"),
         optBool(&result.print_nicely, 'n', "nice", "Output csv data directly, without quoting or column separators."),
         optBool(&result.run_tests, 0, "run-tests", "Runs unit tests on the program"),
         optBool(&show_help, 'h', "help", "Show this help."),
@@ -71,27 +80,40 @@ config_t getConfig(int argc, char **argv) {
         exit(0);
     }
 
+    if (!parseColumnDefinitions(&result, columns)) {
+        goto fail;
+    }
+
+    return result;
+
+fail:
+    optPrintUsage(conf, 80);
+    exit(99);
+}
+
+bool parseColumnDefinitions(config_t *result, str_t columns) {
+
     /*
       Now we need to convert the user-provided "columns" string into
-      something we can use directly.
+      something we can use directly (ie., zero-based ranges).
 
       For example:
 
-        csv -c 1,8,2-4,20-
+      csv -c 1,8,2-4,20-
 
       ...becomes...
 
-        [ { .from=1, .to=2 },
-          { .from=8, .to=9 },
-          { .from=2, .to=5 },
-          { .from=20, .to=MAX_COLUMNS } ]
+      [ { .from=0, .to=1 },
+        { .from=7, .to=8 },
+        { .from=1, .to=4 },
+        { .from=19, .to=MAX_COLUMNS } ]
 
       To do this we first split the pattern on commas, and then split
       on dashes.
     */
     
     iter_t it = iterFromStr(columns);
-    while (iterTakeToStr(&it, strC(",")) && result.num_col_defns < MAX_COL_DEFNS) {
+    while (iterTakeToStr(&it, strC(",")) && result->num_col_defns < MAX_COL_DEFNS) {
         str_t pattern = strTrimRight(iterStr(it), strC(","));
 
         /*
@@ -103,7 +125,7 @@ config_t getConfig(int argc, char **argv) {
 
         iter_t pit = iterFromStr(pattern);
         if (!iterTakeToStr(&pit, strC("-"))) {
-            goto fail;
+            return false;
         }
 
         int from = 0;
@@ -111,13 +133,16 @@ config_t getConfig(int argc, char **argv) {
         
         str_t num_str = strTrimRight(iterStr(pit), strC("-"));
         if (!strMaybeParseInt(num_str, &from)) {
-            goto fail;
+            return false;
         }
+
+        from -= 1;              /* User is 1 based, we're 0 based */
 
         if (iterLast(pit)) {
             /*
-              Just a single number, eg. "10". So we're printing a
-              range from->to+1
+              Just a single number, eg. "10". Bump by one because the
+              "from" isn't inclusive, it represents an exclusive
+              boundary.
             */
             to = from + 1;
         } else {
@@ -126,37 +151,33 @@ config_t getConfig(int argc, char **argv) {
                 /*
                   A single number followed by a dash, eg. "10-". So
                   we're printing a range, from to->rest of columns.
-                 */
+                */
                 to = MAX_COLUMNS;
             } else if (!strMaybeParseInt(num_str, &to)) {
-                goto fail;
+                return false;
             } else {
                 /*
-                  Two numbers, separated by a dash, eg. "10-15". Since
-                  the input pattern is "inclusive" (ie., the above
-                  prints 10,11,12,13,14,15), we need to bump `to`
-                  since internally we represent the range exclusively
-                  (ie., we print up-to-but-not-including the column
-                  identified by "to").
+                  Two numbers, separated by a dash, eg. "10-15". We
+                  don't need to adjust the 'to', since it's final
+                  value is:
+
+                  1) to = to-1; <- adjust because we're zero based
+                  2) to = to+1; <- adjust because to is exclusive and we need to bump it
                 */
-                to += 1;
+                //to = to - 1 + 1;
             }
         }
 
-        if (from > 0 && to > from) {
-            result.col_defns[result.num_col_defns].from = from - 1;
-            result.col_defns[result.num_col_defns].to = to - 1;
-            result.num_col_defns += 1;
+        if (from >= 0 && to > from) {
+            result->col_defns[result->num_col_defns].from = from;
+            result->col_defns[result->num_col_defns].to = to;
+            result->num_col_defns += 1;
         } else {
-            goto fail;
+            return false;
         }
     }
 
-    return result;
-
-fail:
-    optPrintUsage(conf, 80);
-    exit(99);
+    return true;
 }
 
 int runTests();
@@ -391,6 +412,24 @@ str_t takeQuotedColumn(str_t line, str_t quot, str_t sep) {
     assert(false, strC("Unreachable"));
 }
 
+void test_parseColumnDefinitions_shouldParseValidPatterns(test_t *t) {
+    struct { str_t pattern; size idx, num_defns, from, to; } cases[] = {
+        { strC("1"), 0, 1, 0, 1 },
+        { strC("1-10"), 0, 1, 0, 10 },
+        { strC("1-"), 0, 1, 0, MAX_COLUMNS },
+        { strC("1-,5-20"), 1, 2, 4, 20 },
+    };
+
+    for (size i=0; i<countof(cases); i++) {
+        config_t c = {0};
+
+        assertTrue(t, parseColumnDefinitions(&c, cases[i].pattern), strC("Should parse columns"));
+        assertTrue(t, cases[i].num_defns == c.num_col_defns, strC("Should parse the correct number"));
+        assertTrue(t, c.col_defns[cases[i].idx].from == cases[i].from, strC("'from' should match"));
+        assertTrue(t, c.col_defns[cases[i].idx].to == cases[i].to, strC("'to' should match"));
+    }
+}
+
 void test_takeQuotedColumn_shouldParseMiddleColumns(test_t *t) {
     str_t pipe = strC("|");
     str_t comma = strC(",");
@@ -429,6 +468,7 @@ void test_takeQuotedColumn_shouldParseEndColumns(test_t *t) {
 
 int runTests() {
     test_defn_t tests[] = {
+        {"parseColumnDefinitions should parse valid patterns", test_parseColumnDefinitions_shouldParseValidPatterns},
         {"takeQuotedColumn should parse middle columns", test_takeQuotedColumn_shouldParseMiddleColumns},
         {"takeQuotedColumn should parse end columns", test_takeQuotedColumn_shouldParseEndColumns},
     };

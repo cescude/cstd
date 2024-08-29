@@ -28,12 +28,13 @@ typedef struct {
   size num_opts;
 } opts_config_t;
 
+opts_config_t optInit(opt_t *opts, size num_opts, char *summary);
+
 opt_t optBool(bool *result, char s, char *l, char *desc);
 opt_t optInt(int *result, char s, char *l, char *arg_label, char *desc);
 opt_t optStr(str_t *result, char s, char *l, char *arg_label, char *desc);
 opt_t optRest(ptrdiff_t *result);
 
-opts_config_t optInit(opt_t *opts, size num_opts, char *summary);
 bool optParse(opts_config_t config, int numargs, char **args);
 
 /* always goes to stdout */

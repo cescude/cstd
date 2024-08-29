@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-g3 -Wall -Wextra -Wconversion -Wdouble-promotion -Wno-unused-parameter -Wno-unused-function -Wno-sign-conversion -fsanitize=undefined -fsanitize-trap
-# CFLAGS=-O3
+#CFLAGS=-O3
 
 all: TAGS libstd.a opt_demo reader_demo csv test_str test_buf test_iter test_reader
 
@@ -9,11 +9,11 @@ TAGS: src/*.c src/*.h demos/*.c test/*.c
 
 clean:
 	find . -type f -name '*.o' | xargs rm
-	rm libstd.a opt_demo test_str
+	rm libstd.a csv opt_demo test_*
 
-libstd.a: std.o str.o bytes.o buf.o iter.o utf8.o opt.o test.o reader.o print.o
+libstd.a: std.o str.o bytes.o buf.o iter.o utf8.o opt.o test.o fd.o reader.o print.o
 	rm libstd.a 2>&1 > /dev/null || true
-	ar rcs libstd.a std.o str.o bytes.o buf.o iter.o utf8.o opt.o test.o reader.o print.o
+	ar rcs libstd.a std.o str.o bytes.o buf.o iter.o utf8.o opt.o fd.o test.o reader.o print.o
 
 std.o: src/std.h src/std.c
 	${CC} ${CFLAGS} -c src/std.c
@@ -38,6 +38,9 @@ opt.o: src/std.h src/opt.h src/opt.c
 
 test.o: src/std.h src/test.h src/test.c
 	${CC} ${CFLAGS} -c src/test.c
+
+fd.o: src/std.h src/fd.h src/fd.c
+	${CC} ${CFLAGS} -c src/fd.c
 
 reader.o: src/std.h src/reader.h src/reader.c
 	${CC} ${CFLAGS} -c src/reader.c

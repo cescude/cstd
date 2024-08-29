@@ -4,7 +4,8 @@
 
 #define MAX_COL_DEFNS 100
 #define MAX_COLUMNS 1000
-#define BUFFER_SIZE (1<<12)     /* Bytes used for the input buffer, needs to be able to hold a full row */
+#define BUFFER_SIZE (1<<10)     /* Bytes used for the input buffer, needs to be able to hold a full row */
+#define OUT_BUFFER_SIZE (1<<10)
 
 typedef struct {
     str_t inp_sep;
@@ -165,7 +166,7 @@ str_t columns[MAX_COLUMNS] = {0};
 byte read_bytes[BUFFER_SIZE] = {0};
 buf_t read_buf = bufFromC(read_bytes);
 
-byte write_bytes[1<<10] = {0};
+byte write_bytes[OUT_BUFFER_SIZE] = {0};
 buf_t write_buf = bufFromC(write_bytes);
 print_t out = printInit(1, &write_buf);
 

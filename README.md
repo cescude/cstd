@@ -7,6 +7,8 @@ program in, in spite of the C standard library itself. To that end,
 this is just an experiment to see what I sort of an API I can build in
 a "nice" way.
 
+This is a learning repo, to try to figure out some things.
+
 Some goals:
 * Minimize allocations, try to avoid malloc/free
 * Minimize reliance on c-strings
@@ -22,6 +24,7 @@ Some goals:
 * A set of file functions for reading/writing
 * A set of printer functions to write buffered/unbuffered data
 * A set of option-parsing functions to handle CLI concerns
+* A set of unit testing frameworks
 
 Note about strings vs buffers--
 
@@ -49,11 +52,6 @@ of any "straightforward" usage patterns.
 
 ## TODO
 
-* Create `bytes_t` interface similar to `str_t`, and move `strLenBytes` (etc) out
-** bytesLen(bytes_t b)
-** bytesTakeUntilByte(bytes_t b, byte b)
-** bytesIntoStruct(bytes_t b, void *ptr, size sz)
-** bytesIntoArray(bytes_t b, void *ptr, size sz, size count)
-* More test coverage
-
-
+I'm putting more function signatures in header files than I have implemented;
+I'm using this "declare but don't implement" to jot down ideas about missing
+functionality without getting into the weeds.

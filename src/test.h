@@ -10,7 +10,7 @@ typedef struct {
 } test_defn_t;
 
 #define assertTrue(t, bln, desc) if (bln) testPass(t); else testFail(t, desc)
-#define assertFalse(t, bln, desc) assertTrue(t, !(bln), desc)
+#define assertFalse(t, bln, desc) if (bln) testFail(t, desc); else testPass(t)
 
 void testFail(test_t *t, str_t desc);
 void testPass(test_t *t);

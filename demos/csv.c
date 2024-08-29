@@ -418,6 +418,8 @@ void test_parseColumnDefinitions_shouldParseValidPatterns(test_t *t) {
         { strC("1-10"), 0, 1, 0, 10 },
         { strC("1-"), 0, 1, 0, MAX_COLUMNS },
         { strC("1-,5-20"), 1, 2, 4, 20 },
+        { strC("1,2,4-8,2"), 2, 4, 3, 8 },
+        { strC("99,100-,12"), 1, 3, 99, MAX_COLUMNS },
     };
 
     for (size i=0; i<countof(cases); i++) {
@@ -427,6 +429,22 @@ void test_parseColumnDefinitions_shouldParseValidPatterns(test_t *t) {
         assertTrue(t, cases[i].num_defns == c.num_col_defns, strC("Should parse the correct number"));
         assertTrue(t, c.col_defns[cases[i].idx].from == cases[i].from, strC("'from' should match"));
         assertTrue(t, c.col_defns[cases[i].idx].to == cases[i].to, strC("'to' should match"));
+    }
+}
+
+void test_parseColumnDefinitions_shouldNotParseInvalidPatterns(test_t *t) {
+    str_t cases[] = {
+        strC("1X"),
+        strC("1-10,x-2"),
+        strC("1-,,"),
+        strC("1-,-5-20"),
+        strC("1,2,8-7,2"),
+        strC("99,100-;12"),
+    };
+
+    for (size i=0; i<countof(cases); i++) {
+        config_t c = {0};
+        assertFalse(t, parseColumnDefinitions(&c, cases[i]), strC("Should not parse bad patterns"));
     }
 }
 
@@ -469,6 +487,7 @@ void test_takeQuotedColumn_shouldParseEndColumns(test_t *t) {
 int runTests() {
     test_defn_t tests[] = {
         {"parseColumnDefinitions should parse valid patterns", test_parseColumnDefinitions_shouldParseValidPatterns},
+        {"parseColumnDefinitions should not parse invalid patterns", test_parseColumnDefinitions_shouldNotParseInvalidPatterns},
         {"takeQuotedColumn should parse middle columns", test_takeQuotedColumn_shouldParseMiddleColumns},
         {"takeQuotedColumn should parse end columns", test_takeQuotedColumn_shouldParseEndColumns},
     };

@@ -24,6 +24,9 @@ str_t strTakeToChar(str_t src, utf8_char_t c);
 str_t strTakeToStr(str_t src, str_t substr);
 str_t strDropToStr(str_t src, str_t substr);
 
+str_t strDropPrefix(str_t src, str_t prefix);
+str_t strDropSuffix(str_t src, str_t suffix);
+
 str_t strTrim(str_t haystack, str_t needles);
 str_t strTrimLeft(str_t haystack, str_t needles);
 str_t strTrimRight(str_t haystack, str_t needles);

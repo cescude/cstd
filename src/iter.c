@@ -142,8 +142,32 @@ bool iterTakeToStr(iter_t *it, str_t sep) {
     return 1;
 }
 
+// TODO tests
 bool iterTakeToByte(iter_t *it, byte b) {
-    return 0;
+    if (it->tail == 0) {
+        *it = (iter_t){0};      /* completely clear out this iterator */
+        return 0;
+    }
+
+    /* skip past our prior selection */
+    it->beg = it->end;
+    
+    /* create a search string over the remainder of the iterator */
+    str_t s = (str_t){it->end, it->tail};
+
+    while (strNonEmpty(s)) {
+        if (*s.beg == b) {
+            s.beg++;
+            it->end = s.beg;
+            return 1;
+        }
+        s.beg++;
+    }
+
+    it->end = s.beg;
+    it->tail = 0; /* we didn't find the character, so this is the last iteration */
+
+    return 1;
 }
 
 bool iterTakeToAnyByte(iter_t *it, bytes_t needles) {

@@ -113,8 +113,8 @@ bool parseColumnDefinitions(config_t *result, str_t columns) {
     */
     
     iter_t it = iterFromStr(columns);
-    while (iterTakeToStr(&it, strC(",")) && result->num_col_defns < MAX_COL_DEFNS) {
-        str_t pattern = strTrimRight(iterStr(it), strC(","));
+    while (iterTakeToByte(&it, ',') && result->num_col_defns < MAX_COL_DEFNS) {
+        str_t pattern = strDropSuffix(iterStr(it), strC(","));
 
         /*
           Can be:
@@ -124,14 +124,14 @@ bool parseColumnDefinitions(config_t *result, str_t columns) {
         */
 
         iter_t pit = iterFromStr(pattern);
-        if (!iterTakeToStr(&pit, strC("-"))) {
+        if (!iterTakeToByte(&pit, '-')) {
             return false;
         }
 
         int from = 0;
         int to = 0;
         
-        str_t num_str = strTrimRight(iterStr(pit), strC("-"));
+        str_t num_str = strDropSuffix(iterStr(pit), strC("-"));
         if (!strMaybeParseInt(num_str, &from)) {
             return false;
         }
@@ -230,8 +230,10 @@ size parseColumns(str_t line, str_t *columns, str_t iquot, str_t isep);
 void printColumn(print_t out, str_t col, bool nice, str_t iquot, str_t oquot);
 
 void processCsvHeader(reader_t rdr, str_t *columns, config_t conf) {
-    if (readToStr(&rdr, strC("\n"))) {
-        str_t line = strTrimRight(readStr(rdr), strC("\r\n"));
+    if (readToByte(&rdr, '\n')) {
+         // TODO: support a --dos option would to encode the suffix as a \r\n or something
+        str_t line = strDropSuffix(readStr(rdr), strC("\n"));
+        // line = strDropSuffix(line, strC("\r")); // Maybe? Don't love it :/
         if (strBytesLen(line) == rdr.buffer->cap) {
             die(strC("Need to resize the buffer I think"));
         }
@@ -253,9 +255,18 @@ void processCsvHeader(reader_t rdr, str_t *columns, config_t conf) {
 
 void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
     assert(conf.num_col_defns > 0, strC("Please don't call this without any column definitions!"));
+
+    bool easy_print = strEquals(conf.inp_quot, conf.out_quot) && !conf.print_nicely;
     
-    while (readToStr(&rdr, strC("\n"))) {
-        str_t line = strTrimRight(readStr(rdr), strC("\r\n"));
+    while (readToByte(&rdr, '\n')) {
+        str_t line = strDropSuffix(readStr(rdr), strC("\n"));
+
+        /*
+          OK, I don't love this, but I also don't want to specify
+          --dos or something on the commandline... :/
+         */
+        line = strDropSuffix(line, strC("\r"));
+        
         if (strBytesLen(line) == rdr.buffer->cap) {
             die(strC("Need to resize the buffer I think"));
         }
@@ -284,7 +295,16 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
             */
             for (size j = from + (i==0); j<to && j<num_columns; j++) {
                 printStr(out, conf.out_sep);
-                printColumn(out, columns[j], conf.print_nicely, conf.inp_quot, conf.out_quot);
+
+                if (easy_print) {
+                    /*
+                      We don't need to do any quote transformations in
+                      the output!
+                     */
+                    printStr(out, columns[j]);
+                } else {
+                    printColumn(out, columns[j], conf.print_nicely, conf.inp_quot, conf.out_quot);
+                }
             }
         }
 
@@ -294,7 +314,7 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
     printFlush(out);
 }
 
-// TODO add some dang tests me
+// TODO add some dang tests fr
 void printColumn(print_t out, str_t col, bool nice, str_t iquot, str_t oquot) {
     bool print_tail_quote = 0;
     

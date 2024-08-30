@@ -17,6 +17,7 @@ bool readToStr(reader_t *reader, str_t separator);
 bool readToAnyChar(reader_t *reader, str_t chars);
 bool readSkipChars(reader_t *reader, size count);
 
+bool readToByte(reader_t *reader, byte b);
 bool readToBytes(reader_t *reader, bytes_t separator);
 bool readToAnyByte(reader_t *reader, bytes_t bytes);
 bool readSkipBytes(reader_t *reader, size count);

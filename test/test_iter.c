@@ -83,6 +83,27 @@ void test_iterTakeToStr_shouldIterateOverAString(test_t *t) {
     }
 }
 
+void test_iterTakeToByte_shouldIterateOverAString(test_t *t) {
+    struct { str_t src; byte needle; size expected_segments; } cases[] = {
+        { strC(""), ';', 1 },
+        { strC("one"), ';', 1 },
+        { strC("one;"), ';', 2 },
+        { strC("one_two_three"), '_', 3 },
+        { strC("one_two_three_"), '_', 4 },
+    };
+
+    for (size i=0; i<countof(cases); i++) {
+        iter_t it = iterFromStr(cases[i].src);
+
+        size segments = 0;
+        while (iterTakeToByte(&it, cases[i].needle)) {
+            segments++;
+        }
+
+        assertTrue(t, segments == cases[i].expected_segments, nilstr);
+    }
+}
+
 int main(int argc, char **argv) {
     bool verbose = false;
     bool help = false;
@@ -107,6 +128,7 @@ int main(int argc, char **argv) {
         {"iterTakeToChar should iterate over a string", test_iterTakeToChar_shouldIterateOverAString},
         {"iterTakeToAnyChar should iterate over a string", test_iterTakeToAnyChar_shouldIterateOverAString},
         {"iterTakeToStr should iterate over a string", test_iterTakeToStr_shouldIterateOverAString},
+        {"iterTakeToByte should iterate over a string", test_iterTakeToByte_shouldIterateOverAString},
     };
 
     return (int)testRunner(tests, countof(tests), verbose);

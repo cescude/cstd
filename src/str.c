@@ -14,25 +14,30 @@ str_t strFromC(char *s) {
 bool strNextChar(str_t *s) {
   size char_width = utf8BytesNeeded(*s->beg);
   s->beg += char_width;
+  /*
+    This check isn't necessary for code that checks the return value,
+    but does prevent us from going *wildly* out-of-bounds for
+    wrong-code. /shrug
+   */
   if (s->end < s->beg) {
-    s->beg = s->end;
+      s->beg = s->end;
   }
   return s->beg < s->end;
 }
 
-size strLen(str_t s) {
+inline size strLen(str_t s) {
     return utf8StrLen(s);
 }
 
-size strBytesLen(str_t s) {
+inline size strBytesLen(str_t s) {
     return s.end - s.beg;
 }
 
-bool strIsEmpty(str_t s) {
+inline bool strIsEmpty(str_t s) {
   return s.beg >= s.end;
 }
 
-bool strNonEmpty(str_t s) {
+inline bool strNonEmpty(str_t s) {
   return s.beg < s.end;
 }
 
@@ -148,6 +153,20 @@ str_t strDropToStr(str_t src, str_t substr) {
         .beg = cursor.end,
         .end = src.end,
     };
+}
+
+str_t strDropPrefix(str_t src, str_t prefix) {
+    if (strStartsWith(src, prefix)) {
+        src.beg += strBytesLen(prefix);
+    }
+    return src;
+}
+
+str_t strDropSuffix(str_t src, str_t suffix) {
+    if (strEndsWith(src, suffix)) {
+        src.end -= strBytesLen(suffix);
+    }
+    return src;
 }
 
 str_t strSkipByte(str_t src, char c) {

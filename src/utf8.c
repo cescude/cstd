@@ -32,7 +32,7 @@ str_t utf8DropChars(str_t s, size count) {
   return s;
 }
 
-size utf8BytesNeeded(char head) {
+inline size utf8BytesNeeded(char head) {
     /*
       Adapted from https://codereview.stackexchange.com/a/282094
      */

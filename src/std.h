@@ -55,6 +55,7 @@ typedef struct {
 #include "fd.h"
 #include "reader.h"
 #include "print.h"
+#include "fmt.h"
 
 void die(str_t msg);
 void assert(bool t, str_t fail_msg);

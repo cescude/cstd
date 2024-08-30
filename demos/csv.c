@@ -240,13 +240,11 @@ void processCsvHeader(reader_t rdr, str_t *columns, config_t conf) {
 
         size num_columns = parseColumns(line, columns, conf.inp_quot, conf.inp_sep);
 
-        if (conf.num_col_defns == 0) {
-            for (size i=0; i<num_columns; i++) {
-                printNum(out, i+1);
-                printC(out, ") ");
-                printColumn(out, columns[i], true, conf.inp_quot, conf.out_quot);
-                printC(out, "\n");
-            }
+        for (size i=0; i<num_columns; i++) {
+            printNum(out, i+1);
+            printC(out, ") ");
+            printColumn(out, columns[i], true, conf.inp_quot, conf.out_quot);
+            printC(out, "\n");
         }
     }
 

@@ -24,7 +24,7 @@ Some goals:
 * A set of file functions for reading/writing
 * A set of printer functions to write buffered/unbuffered data
 * A set of option-parsing functions to handle CLI concerns
-* A set of unit testing frameworks
+* A set of unit testing functions
 
 Note about strings vs buffers--
 
@@ -55,3 +55,6 @@ of any "straightforward" usage patterns.
 I'm putting more function signatures in header files than I have implemented;
 I'm using this "declare but don't implement" to jot down ideas about missing
 functionality without getting into the weeds.
+
+## Notes about demos/csv.c
+

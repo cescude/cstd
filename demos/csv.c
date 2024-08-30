@@ -314,7 +314,6 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
     printFlush(out);
 }
 
-// TODO add some dang tests fr
 void printColumn(print_t out, str_t col, bool nice, str_t iquot, str_t oquot) {
     bool print_tail_quote = 0;
     
@@ -329,6 +328,13 @@ void printColumn(print_t out, str_t col, bool nice, str_t iquot, str_t oquot) {
             printStr(out, oquot);
             print_tail_quote = true;
         }
+    } else {
+        /*
+          Well, it's not quoted, so there's nothing to translate & we
+          can output the string directly.
+        */
+        printStr(out, col);
+        return;
     }
 
     str_t segment = (str_t){col.beg, col.beg};
@@ -504,12 +510,39 @@ void test_takeQuotedColumn_shouldParseEndColumns(test_t *t) {
     }
 }
 
+void test_printColumn(test_t *t) {
+    str_t iq = strC("'");
+    str_t oq = strC(":");
+    
+    struct { str_t column, expected, expected_nice; } cases[] = {
+        { strC("one"), strC("one"), strC("one") },
+        { strC("on'e"), strC("on'e"), strC("on'e") }, /* not a quoted column, so it gets output directly */
+        { strC("'one'"), strC(":one:"), strC("one") }, 
+        { strC("'on''e'"), strC(":on::e:"), strC("on:e") },
+    };
+
+    char buffer[10] = {0};
+    buf_t buf = bufFromC(buffer);
+    print_t p = printInitNoFile(&buf);
+
+    for (size i=0; i<countof(cases); i++) {
+        bufClear(&buf);
+        printColumn(p, cases[i].column, false, iq, oq);
+        assertTrue(t, strEquals(strFromBuf(buf), cases[i].expected), strC("Raw printing"));
+
+        bufClear(&buf);
+        printColumn(p, cases[i].column, true, iq, oq);
+        assertTrue(t, strEquals(strFromBuf(buf), cases[i].expected_nice), strC("Nice printing"));
+    }
+}
+
 int runTests() {
     test_defn_t tests[] = {
         {"parseColumnDefinitions should parse valid patterns", test_parseColumnDefinitions_shouldParseValidPatterns},
         {"parseColumnDefinitions should not parse invalid patterns", test_parseColumnDefinitions_shouldNotParseInvalidPatterns},
         {"takeQuotedColumn should parse middle columns", test_takeQuotedColumn_shouldParseMiddleColumns},
         {"takeQuotedColumn should parse end columns", test_takeQuotedColumn_shouldParseEndColumns},
+        {"printColumn basic functionality", test_printColumn},
     };
 
     return (int)testRunner(tests, countof(tests), true);

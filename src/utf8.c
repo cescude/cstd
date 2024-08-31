@@ -36,12 +36,11 @@ inline size utf8BytesNeeded(char head) {
     /*
       Adapted from https://codereview.stackexchange.com/a/282094
      */
-    unsigned char ch = (unsigned char)head;
     return
         1 +                     /* ie., (ch >= 0) */
-        (ch >= 0xC0) +
-        (ch >= 0xE0) +
-        (ch >= 0xF0);
+        ((unsigned char)head >= 0xC0) +
+        ((unsigned char)head >= 0xE0) +
+        ((unsigned char)head >= 0xF0);
     
     /* if ((head & 0x80) == 0) { */
     /*     return 1; */

@@ -21,6 +21,7 @@ utf8_char_t strFirstChar(str_t s);
 str_t strFirstLine(str_t src);
 
 str_t strTakeToChar(str_t src, utf8_char_t c);
+str_t strTakeToByte(str_t src, byte b);
 str_t strTakeToStr(str_t src, str_t substr);
 str_t strDropToStr(str_t src, str_t substr);
 

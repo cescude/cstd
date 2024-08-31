@@ -117,14 +117,15 @@ str_t strTakeToChar(str_t src, utf8_char_t c) {
 }
 
 str_t strTakeToByte(str_t src, char c) {
-  str_t result = (str_t){src.beg, src.beg};
+    str_t result = (str_t){src.beg, src.beg};
   
-  for (; result.end < src.end; result.end++) {
-    if (*result.end == c) {
-      break;
+    for (; result.end < src.end; result.end++) {
+        if (*result.end == c) {
+            result.end++;
+            break;
+        }
     }
-  }
-  return result;
+    return result;
 }
 
 /*

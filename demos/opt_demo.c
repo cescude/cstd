@@ -47,5 +47,25 @@ int main(int argc, char **argv) {
         exit(show_help ? 0 : 99);
     }
 
+    fmt_t fmt = fmtToFile(1);
+
+    fmtNew(&fmt,
+           "verbose={}, energy={}, filename={}, s={}, "
+           "columns={}, text={}, help={}, <name>={}, <nick>={}\n");
+    fmtNum(&fmt, verbose);
+    fmtNum(&fmt, energy);
+    fmtStr(&fmt, filename);
+    fmtNum(&fmt, show_text);
+    fmtNum(&fmt, columns);
+    fmtStr(&fmt, text);
+    fmtNum(&fmt, show_help);
+    fmtStr(&fmt, name);
+    fmtStr(&fmt, nickname);
+
+    for (size i=rest_idx; i<argc; i++) {
+        fmtNew(&fmt, " EXTRA={}!\n");
+        fmtStr(&fmt, strFromC(argv[i]));
+    }
+
     return 0;
 }

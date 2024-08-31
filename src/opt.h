@@ -7,7 +7,7 @@ typedef struct {
     str_t long_name;
     str_t arg_label;		/* only used for help messages */
     str_t description;          /* only used for help messages */
-    enum { optbool, optint, optstr, optrest } type;
+    enum { optbool, optint, optstr, optposarg, optrest } type;
     union {
         bool *b;
         int *i;
@@ -37,6 +37,7 @@ opts_config_t optInit(opt_t *opts, size num_opts);
 opt_t optBool(bool *result, char s, char *l, char *desc);
 opt_t optInt(int *result, char s, char *l, char *arg_label, char *desc);
 opt_t optStr(str_t *result, char s, char *l, char *arg_label, char *desc);
+opt_t optArg(str_t *result, char *arg_label, char *desc); /* "optArg" but it's a required positional arg :^/ */
 opt_t optRest(ptrdiff_t *result, char *arg_label, char *desc);
 
 bool optParse(opts_config_t config, int numargs, char **args);

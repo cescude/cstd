@@ -16,17 +16,15 @@ conf_t getConfiguration(int argc, char **argv) {
                 "Print the line number along with the data"),
         optBool(&result.show_help, 'h', "help",
                 "Show this help message"),
-        optRest(&result.rest_idx),
+        optRest(&result.rest_idx, "<file>", 0),
     };
 
-    opts_config_t config = optInit(
-        opts, countof(opts),
-        "Usage: reader_demo [OPTIONS] [FILE]...\n\n"
-        "Demo application that shows an example of using the reader interface "
-        "in this particular library.");
+    opts_config_t config = optInit(opts, countof(opts));
 
     if (!optParse(config, argc, argv) || result.show_help) {
-        optPrintUsage(config, 80);
+        optPrintUsage(config, argv[0],
+                      "Demo application that shows an example of using the reader interface "
+                      "in this particular library.");
         exit(result.show_help ? 0 : 99);
     }
 

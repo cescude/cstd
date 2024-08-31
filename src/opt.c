@@ -42,6 +42,15 @@ opt_t optStr(str_t *result, char s, char *l, char *arg_label, char *desc) {
   };
 }
 
+opt_t optArg(str_t *result, char *arg_label, char *desc) {
+    return (opt_t){
+        .arg_label = strFromC(arg_label),
+        .description = strFromC(desc),
+        .type = optposarg,
+        .ptr.s = result,
+    };
+}
+
 opt_t optRest(ptrdiff_t *result, char *arg_label, char *desc) {
     return (opt_t){
         .arg_label = strFromC(arg_label),
@@ -221,6 +230,20 @@ bool optParse(opts_config_t config, int num_args, char **args) {
     }
   }
 
+  for (size i=0; i<num_opts; i++) {
+
+      if (opts[i].type == optposarg) {
+          /*
+            OK, we need a positional argument; if we've run out, it's
+            a problem!
+          */
+          if (idx >= num_args) return 0;
+          
+          *opts[i].ptr.s = strFromC(args[idx]);
+          idx++;
+      }
+  }
+
   size a = _findRestIdx(config);
   if (a < num_opts) {
     *opts[a].ptr.r = idx;
@@ -256,7 +279,28 @@ void optPrintArguments(opts_config_t config) {
 
     fmtNew(&fmt, "Arguments:\n\n");
 
-    /* TODO: Specify required args w/ something like optArg() */
+    opt_t *opts = config.opts;
+    size num_opts = config.num_opts;
+
+    for (size i=0; i<num_opts; i++) {
+        if (opts[i].type == optposarg) {
+            if (strNonEmpty(opts[i].arg_label)) {
+                fmtNew(&fmt, "  {}\n");
+                fmtStr(&fmt, opts[i].arg_label);
+
+                /*
+                  Only print the desc if we have a name to go with it!
+                */
+                if (strNonEmpty(opts[i].description)) {
+                    printWrappedParagraph(
+                        strC("    "),
+                        config.help_width,
+                        opts[i].description
+                    );
+                }
+            }
+        }
+    }
     
     size idx = _findRestIdx(config);
     if (idx < config.num_opts) {
@@ -265,10 +309,17 @@ void optPrintArguments(opts_config_t config) {
         if (strNonEmpty(opt.arg_label)) {
             fmtNew(&fmt, "  {}...\n");
             fmtStr(&fmt, opt.arg_label);
-        }
 
-        if (strNonEmpty(opt.description)) {
-            printWrappedParagraph(strC("    "), config.help_width, opt.description);
+            /*
+              Only print the desc if we have a name to go with it!
+             */
+            if (strNonEmpty(opt.description)) {
+                printWrappedParagraph(
+                    strC("    "),
+                    config.help_width,
+                    opt.description
+                );
+            }
         }
     }
 
@@ -283,7 +334,7 @@ void optPrintOptions(opts_config_t config) {
     for (size idx=0; idx<config.num_opts; idx++) {
         opt_t opt = config.opts[idx];
 
-        if (opt.type != optrest) {
+        if (opt.type != optposarg && opt.type != optrest) {
             int has_short = (opt.short_name!=0) << 2;
             int has_long  = strNonEmpty(opt.long_name) << 1;
             int has_label = strNonEmpty(opt.arg_label);
@@ -317,37 +368,50 @@ void optPrintUsage(opts_config_t config, char *prog_name, char *summary) {
 
     size rest_idx = _findRestIdx(config);
     bool has_options = 0;
+    bool has_args = 0;
     
     for (size i=0; i<config.num_opts; i++) {
         if (config.opts[i].type != optrest) {
             has_options = 1;
-            break;
+        } else if (config.opts[i].type == optposarg ||
+                   config.opts[i].type == optrest) {
+            has_args = 1;
         }
     }
 
-    if (has_options && rest_idx < config.num_opts) {
-        fmtNew(&fmt, "Usage: {} [OPTIONS] [{}]...\n\n");
-    } else if (has_options) {
-        fmtNew(&fmt, "Usage: {} [OPTIONS]\n\n");
-    } else if (rest_idx < config.num_opts) {
-        fmtNew(&fmt, "Usage: {} [{}]...\n\n");
-    } else {
-        fmtNew(&fmt, "Usage: {}\n\n");
-    }
-
+    fmtNew(&fmt, "Usage: {}");
     fmtStr(&fmt, strFromC(prog_name));
-    if (rest_idx < config.num_opts) {
-        if (strIsEmpty(config.opts[rest_idx].arg_label)) {
-            fmtStr(&fmt, strC("ARG"));
-        } else {
-            fmtStr(&fmt, config.opts[rest_idx].arg_label);
+
+    if (has_options) {
+        printC(out, " [OPTIONS]");
+    }
+
+    for (size i=0; i<config.num_opts; i++) {
+        if (config.opts[i].type == optposarg) {
+            fmtNew(&fmt, " {}");
+            fmtStr(&fmt, strIsEmpty(config.opts[i].arg_label)
+                   ? strC("<arg>")
+                   : config.opts[i].arg_label
+            );
         }
     }
+    
+    if (rest_idx < config.num_opts) {
+        fmtNew(&fmt, " [{}]...");
+        fmtStr(
+            &fmt,
+            strIsEmpty(config.opts[rest_idx].arg_label)
+                ? strC("ARG")
+                : config.opts[rest_idx].arg_label)
+        ;
+    }
+
+    printC(out, "\n\n");
 
     printWrappedParagraph(strC("  "), config.help_width, strFromC(summary));
     printStr(out, strC("\n"));
 
-    if (rest_idx < config.num_opts) {
+    if (has_args) {
         optPrintArguments(config);
     }
 

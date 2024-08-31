@@ -70,14 +70,10 @@ int main(int argc, char **argv) {
         optBool(&help, 'h', "help", "Show this help information"),
     };
 
-    opts_config_t config = optInit(
-        opts, countof(opts),
-        "USAGE: ./test_fmt [OPTIONS]\n\n"
-        "Run unit tests on the fmt library.\n\n"
-    );
+    opts_config_t config = optInit(opts, countof(opts));
 
     if (!optParse(config, argc, argv) || help) {
-        optPrintUsage(config, 80);
+        optPrintUsage(config, argv[0], "Run unit tests on the fmt library.");
         return help ? 0 : 99;
     }
   

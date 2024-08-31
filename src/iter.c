@@ -153,19 +153,18 @@ bool iterTakeToByte(iter_t *it, byte b) {
     it->beg = it->end;
     
     /* create a search string over the remainder of the iterator */
-    str_t s = (str_t){it->end, it->tail};
+    bytes_t bytes = (bytes_t){it->end, it->tail};
 
-    while (strNonEmpty(s)) {
-        if (*s.beg == b) {
-            s.beg++;
-            it->end = s.beg;
+    size bytes_len = bytesLen(bytes);
+    for (size i=0; i<bytes_len; i++) {
+        if (bytes.beg[i] == b) {
+            it->end = bytes.beg + i + 1;
             return 1;
         }
-        s.beg++;
     }
 
-    it->end = s.beg;
-    it->tail = 0; /* we didn't find the character, so this is the last iteration */
+    it->end = it->tail;
+    it->tail = 0; /* we didn't find the byte, so this is the last iteration */
 
     return 1;
 }

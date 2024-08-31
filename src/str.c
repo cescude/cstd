@@ -59,7 +59,8 @@ bool strStartsWith(str_t s, str_t prefix) {
 
   if (s.beg == NULL) return prefix_len == 0;
   if ((s.end - s.beg) < prefix_len) return 0;
-  
+  if (prefix_len == 1) return s.beg[0] == prefix.beg[0];
+
   s.end = s.beg + prefix_len;
   return strEquals(s, prefix);
 }
@@ -71,6 +72,7 @@ bool strEndsWith(str_t s, str_t suffix) {
 
   if (s.beg == NULL) return suffix_len == 0;
   if ((s.end - s.beg) < suffix_len) return 0;
+  if (suffix_len == 1) return s.end[-1] == suffix.beg[0];
   
   s.beg = s.end - suffix_len;
   return strEquals(s, suffix);

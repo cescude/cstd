@@ -4,8 +4,8 @@
 
 #define MAX_COL_DEFNS 100
 #define MAX_COLUMNS 1000
-#define BUFFER_SIZE (1<<10)     /* Bytes used for the input buffer, needs to be able to hold a full row */
-#define OUT_BUFFER_SIZE (1<<10)
+#define BUFFER_SIZE (4<<20)     /* Bytes used for the input buffer, needs to be able to hold a full row */
+#define OUT_BUFFER_SIZE (4<<20)
 
 typedef struct {
     str_t inp_sep;

@@ -50,12 +50,12 @@ typedef struct {
 #include "buf.h"
 #include "iter.h"
 #include "utf8.h"
-#include "opt.h"
 #include "test.h"
 #include "fd.h"
 #include "reader.h"
 #include "print.h"
 #include "fmt.h"
+#include "opt.h"
 
 void die(str_t msg);
 void assert(bool t, str_t fail_msg);

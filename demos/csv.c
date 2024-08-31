@@ -29,8 +29,23 @@ typedef struct {
 
 bool parseColumnDefinitions(config_t *conf, str_t columns);
 
-config_t getConfig(int argc, char **argv) {
+void printUsage(opts_config_t conf) {
+    optPrintUsage(conf, "csv",
+                  "Process one or more csv files. If no options are "
+                  "specified, print the column list derived from "
+                  "the header.");
+    optPrintSection(conf,
+        "Examples:",
+        "* csv test.csv # print header list from test.csv\n"
+        "* csv -c1,2,9 test.csv # print columns 1,2,9\n"
+        "* csv -c1,5-9 test.csv # print columns 1, and 5-9\n"
+        "* csv -c9,1-8 test.csv # put column 9 in front\n"
+        "* csv -c1,1,5-8,1 test.csv # duplicate column 1 several times"
+    );
+}
 
+config_t getConfig(int argc, char **argv) {
+    
     /* Setup defaults */
     config_t result = {
         .inp_sep = strC(","),
@@ -62,33 +77,27 @@ config_t getConfig(int argc, char **argv) {
         optBool(&result.print_nicely, 'n', "nice", "Output csv data directly, without quoting or column separators."),
         optBool(&result.run_tests, 0, "run-tests", "Runs unit tests on the program"),
         optBool(&show_help, 'h', "help", "Show this help."),
-        optRest(&result.files_idx),
+        optRest(&result.files_idx, "<file>", "List of csv files to process. When omitted, reads from stdin."),
     };
 
-    opts_config_t conf = optInit(
-        opts, countof(opts),
-        "Usage: csv [OPTIONS] [FILE...]\n"
-        "\n"
-        "Process one or more CSV files according to the provided options. If no "
-        "options are specified, print the column list.");
-
+    opts_config_t conf = optInit(opts, countof(opts));
 
     if (!optParse(conf, argc, argv)) {
-        goto fail;
-    } else if (show_help) {
-        optPrintUsage(conf, 80);
+        printUsage(conf);
+        exit(99);
+    }
+
+    if (show_help) {
+        printUsage(conf);
         exit(0);
     }
 
     if (!parseColumnDefinitions(&result, columns)) {
-        goto fail;
+        printUsage(conf);
+        exit(99);
     }
 
     return result;
-
-fail:
-    optPrintUsage(conf, 80);
-    exit(99);
 }
 
 bool parseColumnDefinitions(config_t *result, str_t columns) {

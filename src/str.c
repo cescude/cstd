@@ -243,27 +243,28 @@ str_t strTrimRight(str_t src, str_t needles) {
 }
 
 str_t strTakeLineWrapped(str_t text, size cols) {
-  if (strLen(text) <= cols) {
-    return text;
-  }
-
-  str_t line = (str_t){text.beg, text.beg};
-
-  for (size c = cols; c > 0 && strNonEmpty(text); c--, strNextChar(&text)) {
-    if (*text.beg == ' ') {
-      line.end = text.beg;
-    } else if (*text.beg == '\n') {
-      line.end = text.beg;
-      c = cols;	/* a forced newline, we can start over from column 1 */
+    if (strLen(text) <= cols) {
+        return text;
     }
-  }
-  
-  if (strIsEmpty(line)) {
-    /* a single word is more than cols wide, need to break it up! */
-    line.end = text.beg;
-  }
 
-  return line;
+    str_t line = (str_t){text.beg, text.beg};
+
+    for (size c = cols; c > 0 && strNonEmpty(text); c--, strNextChar(&text)) {
+        if (*text.beg == ' ') {
+            line.end = text.beg;
+        } else if (*text.beg == '\n') {
+            /* a forced newline, hard wrap at this point */
+            line.end = text.beg + 1;
+            break;
+        }
+    }
+  
+    if (strIsEmpty(line)) {
+        /* a single word is more than cols wide, need to break it up! */
+        line.end = text.beg;
+    }
+
+    return line;
 }
 
 uint64_t strHash_djb2(str_t src) {

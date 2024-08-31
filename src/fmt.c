@@ -40,6 +40,11 @@ void fmtStr(fmt_t *fmt, str_t str) {
     _advance(fmt->out, &fmt->it);
 }
 
+void fmtChar(fmt_t *fmt, utf8_char_t c) {
+    printChar(fmt->out, c);
+    _advance(fmt->out, &fmt->it);
+}
+
 void fmtNum(fmt_t *fmt, int64_t n) {
     printNum(fmt->out, n);
     _advance(fmt->out, &fmt->it);

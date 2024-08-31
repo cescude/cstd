@@ -28,18 +28,21 @@ int main(int argc, char **argv) {
                "Number of columns to use when printing the --text option."),
         optStr(&text, 0, "text", "TEXT", "Text to word-wrap"),
         optBool(&show_help, 'h', "help", "Display this help."),
-        optRest(&rest_idx),
+        optRest(&rest_idx, 0, NULL),
     };
   
     opts_config_t config =
-        optInit(opts, countof(opts),
-                "Usage: opt_demo [OPTIONS] <extra_args>...\n"
-                "\n"
-                "A command-line tool for demoing the opt-parsing aspect and "
-                "functionality 😅 contained in this (personal!) standard library.");
+        optInit(opts, countof(opts), 80);
 
     if (!optParse(config, argc, argv) || show_help) {
-        optPrintUsage(config, 80);
+        optPrintSection(
+            config,
+            "Usage: opt_demo [OPTIONS] <extra_args>...",
+            "A command-line tool for demoing the opt-parsing aspect and "
+            "functionality 😅 contained in this (personal!) standard library."
+        );
+        optPrintArguments(config);
+        optPrintOptions(config);
         exit(show_help ? 0 : 99);
     }
 

@@ -2,6 +2,8 @@
 
 #include "std.h"
 
+static print_t out = printInitUnbuffered(STDOUT_FILENO);
+
 /*
   It's up to the caller to make sure there's sufficient space in opts
   for this (not a huge deal, since program options aren't typically
@@ -40,18 +42,20 @@ opt_t optStr(str_t *result, char s, char *l, char *arg_label, char *desc) {
   };
 }
 
-opt_t optRest(ptrdiff_t *result) {
-  return (opt_t){
-    .type = optrest,
-    .ptr.r = result,
-  };
+opt_t optRest(ptrdiff_t *result, char *arg_label, char *desc) {
+    return (opt_t){
+        .arg_label = strFromC(arg_label),
+        .description = strFromC(desc),
+        .type = optrest,
+        .ptr.r = result,
+    };
 }
 
-opts_config_t optInit(opt_t *opts, size num_opts, char *summary) {
+opts_config_t optInit(opt_t *opts, size num_opts) {
   return (opts_config_t){
     .opts = opts,
     .num_opts = num_opts,
-    .summary = strFromC(summary)
+    .help_width = 80,
   };
 }
 
@@ -225,65 +229,129 @@ bool optParse(opts_config_t config, int num_args, char **args) {
   return 1;
 }
 
-void printWrappedParagraph(print_t p, str_t prefix, size cols, str_t para) {
+void printWrappedParagraph(str_t prefix, size cols, str_t para) {
   size prefix_len = strLen(prefix);
   while (strNonEmpty(para)) {
     str_t line = strTakeLineWrapped(para, cols - prefix_len);
-    printStr(p, prefix);
-    printStr(p, strTrim(line, strC(" \n")));
-    printStr(p, strC("\n"));
+    printStr(out, prefix);
+    printStr(out, strTrim(line, strC(" \n")));
+    printStr(out, strC("\n"));
     para.beg = line.end;	/* skip past the plucked line */
     para = strTrimLeft(para, strC(" "));
   }
 }
 
-void optPrintUsage(opts_config_t config, ptrdiff_t cols) {
-    print_t out = printInitUnbuffered(STDOUT_FILENO);
+void optPrintSection(opts_config_t config, char *section_name, char *section_desc) {
+    fmt_t fmt = fmtInit(out);
+    
+    fmtNew(&fmt, "{}\n\n");
+    fmtStr(&fmt, strFromC(section_name));
 
-    if (strNonEmpty(config.summary)) {
-        printWrappedParagraph(out, (str_t){0}, cols, config.summary);
-        printStr(out, strC("\n"));
+    printWrappedParagraph(strC("  "), config.help_width, strFromC(section_desc));
+    printStr(out, strC("\n"));
+}
+
+void optPrintArguments(opts_config_t config) {
+    fmt_t fmt = fmtInit(out);
+
+    fmtNew(&fmt, "Arguments:\n\n");
+
+    /* TODO: Specify required args w/ something like optArg() */
+    
+    size idx = _findRestIdx(config);
+    if (idx < config.num_opts) {
+        opt_t opt = config.opts[idx];
+
+        if (strNonEmpty(opt.arg_label)) {
+            fmtNew(&fmt, "  {}...\n");
+            fmtStr(&fmt, opt.arg_label);
+        }
+
+        if (strNonEmpty(opt.description)) {
+            printWrappedParagraph(strC("    "), config.help_width, opt.description);
+        }
     }
 
-    if (config.num_opts) {
-        printStr(out, strC("Options:\n"));
-    }
+    printC(out, "\n");
+}
 
-    for (ptrdiff_t idx=0; idx<config.num_opts; idx++) {
+void optPrintOptions(opts_config_t config) {
+    fmt_t fmt = fmtInit(out);
+
+    fmtNew(&fmt, "Options:\n\n");
+
+    for (size idx=0; idx<config.num_opts; idx++) {
         opt_t opt = config.opts[idx];
 
         if (opt.type != optrest) {
-            bool has_short = opt.short_name;
-            bool has_long  = strNonEmpty(opt.long_name);
-      
-            if (has_short) {
-                printStr(out, strC("  -"));
-                printChar(out, opt.short_name);
-            } else {
-                printStr(out, strC("    "));
+            int has_short = (opt.short_name!=0) << 2;
+            int has_long  = strNonEmpty(opt.long_name) << 1;
+            int has_label = strNonEmpty(opt.arg_label);
+
+            switch (has_short | has_long | has_label) {
+            case 0x7: fmtNew(&fmt, "  -{}, --{} {}\n"); break;
+            case 0x6: fmtNew(&fmt, "  -{}, --{}\n"); break;
+            case 0x5: fmtNew(&fmt, "  -{} {}\n"); break;
+            case 0x4: fmtNew(&fmt, "  -{}\n"); break;
+            case 0x3: fmtNew(&fmt, "     --{} {}\n"); break;
+            case 0x2: fmtNew(&fmt, "     --{}\n"); break;
+            default:
+                assert(false, strC("Invalid options passed, needs a name!"));
             }
 
-            if (has_short && has_long) {
-                printStr(out, strC(", --"));
-            } else if (has_long) {
-                printStr(out, strC("  --"));
-            }
-
-            if (has_long) {
-                printStr(out, opt.long_name);
-            }
-
-            if ((has_short || has_long) && strNonEmpty(opt.arg_label)) {
-                printStr(out, strC(" "));
-                printStr(out, opt.arg_label);
-            }
-
-            printStr(out, strC("\n"));
+            if (has_short) fmtChar(&fmt, opt.short_name);
+            if (has_long) fmtStr(&fmt, opt.long_name);
+            if (has_label) fmtStr(&fmt, opt.arg_label);
 
             if (strNonEmpty(opt.description)) {
-                printWrappedParagraph(out, strC("          "), cols, opt.description);
+                printWrappedParagraph(strC("          "), config.help_width, opt.description);
             }
         }
     }
+
+    printC(out, "\n");
 }
 
+void optPrintUsage(opts_config_t config, char *prog_name, char *summary) {
+    fmt_t fmt = fmtInit(out);
+
+    size rest_idx = _findRestIdx(config);
+    bool has_options = 0;
+    
+    for (size i=0; i<config.num_opts; i++) {
+        if (config.opts[i].type != optrest) {
+            has_options = 1;
+            break;
+        }
+    }
+
+    if (has_options && rest_idx < config.num_opts) {
+        fmtNew(&fmt, "Usage: {} [OPTIONS] [{}]...\n\n");
+    } else if (has_options) {
+        fmtNew(&fmt, "Usage: {} [OPTIONS]\n\n");
+    } else if (rest_idx < config.num_opts) {
+        fmtNew(&fmt, "Usage: {} [{}]...\n\n");
+    } else {
+        fmtNew(&fmt, "Usage: {}\n\n");
+    }
+
+    fmtStr(&fmt, strFromC(prog_name));
+    if (rest_idx < config.num_opts) {
+        if (strIsEmpty(config.opts[rest_idx].arg_label)) {
+            fmtStr(&fmt, strC("ARG"));
+        } else {
+            fmtStr(&fmt, config.opts[rest_idx].arg_label);
+        }
+    }
+
+    printWrappedParagraph(strC("  "), config.help_width, strFromC(summary));
+    printStr(out, strC("\n"));
+
+    if (rest_idx < config.num_opts) {
+        optPrintArguments(config);
+    }
+
+    if (has_options) {
+        optPrintOptions(config);
+    }
+}

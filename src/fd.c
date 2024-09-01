@@ -3,9 +3,11 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 bool fdReadIntoBuf(int fd, buf_t *bufp) {
     buf_t b = *bufp;
@@ -34,6 +36,10 @@ str_t fdMemMap(int fd) {
   /* TODO */
   abort();
   return (str_t){NULL, 0};
+}
+
+bool fdOpenReadOnly(str_t filename, int *fd_out) {
+    return fdOpen(filename, fd_out, O_RDONLY);
 }
 
 bool fdOpen(str_t filename, int *fd_out, int flags) {

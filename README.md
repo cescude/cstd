@@ -199,12 +199,61 @@ Notice the typechecking etc happens at parameter declaration, and so
 there's no real need for extra compiler magic or macros to introspect
 parameters.
 
+FWIW the `fmtStart` takes a char* for two reasons:
+
+* It's pretty easy (for me) to type `fmtStr(...)` by accident, and
+  this prevents that.
+  
+* Also don't think dynamically generating format strings is a great
+  idea, so this makes it harder to do :^(
+
 TODO: Will want to create some extra *F functions, like in the `fd`
-collection, eg `fmtNumF(&fmt, 10, (spec_t){.hex=true,.width=10})`.
+collection, eg. something like `fmtNumF(&fmt, 10,
+(spec_t){.hex=true,.width=10})`.
 
 ## Commandline option parsing
 
-...
+Set of functions for parsing commandline options. Essentially, you
+statically declare a set of options, positional arguments, etc, then
+use some helper methods to parse them out. Uses const cstrings for
+configuration since this is basically static data.
+
+For example:
+
+    /*
+      provide default values; if an option isn't specified, the
+      default will be retained.
+    */
+    bool verbose = 0;
+    int energy = 0;
+    int coins = 0;
+    str_t nickname = strC("");
+    bool show_help = 0;
+    
+    opt_t opts[] = {
+        optBool(&verbose, 'v', "verbose", "Be extra loud or something."),
+        optInt(&energy, 'E', "energy", "Specify energy levels."),
+        optInt(&coins, 'c', "coins", "How many coins do you want?"),
+        optStr(&nickname, 'n', "nick", "Provide a nickname for this user."),
+        optBool(&show_help, 'h', "help", "Displays this help"),
+    };
+
+    opts_config_t config = optInit(opts, countof(opts));
+
+    if (!optParse(config, argc, argv) || show_help) {
+       optPrintUsage(config, argv[0], "A commandline demonstration of a few features");
+       exit(0);
+    }
+
+    fmt_t fmt = fmtToFile(1); /* unbuffered writes to stdout */
+    fmtStart(&fmt, "verbose={}, energy={}, coins={}, nickname={}\n");
+    fmtBool(&fmt, verbose);
+    fmtInt(&fmt, energy);
+    fmtInt(&fmt, coins);
+    fmtStr(&fmt, nickname);
+
+Can check out `demos/opt_demo.c` or `demos/csv.c` for examples that
+exercise more functionality.
 
 ## Scratch/notes below
 
@@ -240,4 +289,3 @@ functionality without getting into the weeds.
 
 General cleanup
 * unify naming
-* remove #include's from std.h

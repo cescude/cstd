@@ -1,5 +1,7 @@
 #include "std.h"
 
+#include <string.h>
+
 iter_t iterFromBytes(bytes_t bs) {
     return (iter_t){
         .beg = bs.beg,

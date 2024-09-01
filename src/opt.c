@@ -2,7 +2,7 @@
 
 #include "std.h"
 
-static print_t out = printInitUnbuffered(STDOUT_FILENO);
+static print_t out = printInitUnbuffered(1);
 
 /*
   It's up to the caller to make sure there's sufficient space in opts

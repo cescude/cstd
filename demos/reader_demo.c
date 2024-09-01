@@ -34,7 +34,7 @@ conf_t getConfiguration(int argc, char **argv) {
 void printFile(print_t out, str_t filename, conf_t cnf) {
     int fd = 0;                 /* default to stdin */
     if (strNonEmpty(filename)) {
-        if (!fdOpen(filename, &fd, O_RDONLY)) {
+        if (!fdOpenReadOnly(filename, &fd)) {
             return;
         }
     }
@@ -59,7 +59,7 @@ void printFile(print_t out, str_t filename, conf_t cnf) {
         }
     }
 
-    close(fd);
+    fdClose(fd);
 
     printFlush(out);
 }

@@ -209,10 +209,10 @@ int main(int argc, char **argv) {
     
     for (size i=conf.files_idx; i<argc; i++) {
         int fd;
-        if (fdOpen(strFromC(argv[i]), &fd, O_RDONLY)) {
+        if (fdOpenReadOnly(strFromC(argv[i]), &fd)) {
             reader_t rdr = readInit(fd, &read_buf);
             processCsv(rdr, columns, conf);
-            close(fd);
+            fdClose(fd);
         }
     }
 

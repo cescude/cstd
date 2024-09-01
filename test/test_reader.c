@@ -8,8 +8,7 @@
 void initPipe(int *writer, int *reader) {
     int fildes[2] = {0};
     if (pipe(fildes) < 0) {
-        perror("Unable to setup test");
-        exit(99);
+        die("Unable to setup test");
     }
     *reader = fildes[0];
     *writer = fildes[1];

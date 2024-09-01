@@ -35,6 +35,11 @@ void fmtStart(fmt_t *fmt, char *pattern) {
     fmt->it = it;
 }
 
+void fmtBool(fmt_t *fmt, bool b) {
+    printStr(fmt->out, strFromC(b == false ? "false" : "true"));
+    _advance(fmt->out, &fmt->it);
+}
+
 void fmtStr(fmt_t *fmt, str_t str) {
     printStr(fmt->out, str);
     _advance(fmt->out, &fmt->it);

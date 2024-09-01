@@ -1,15 +1,10 @@
 #pragma once
 
-#include <fcntl.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 
 typedef ptrdiff_t size;
-
 #define countof(x) (size)(sizeof(x)/sizeof(x[0]))
 
 /*

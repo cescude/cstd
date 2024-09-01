@@ -10,6 +10,7 @@ fmt_t fmtToBuffer(buf_t *buf);
 fmt_t fmtToFile(int fd);
 
 void fmtStart(fmt_t *fmt, char *pattern);
+void fmtBool(fmt_t *fmt, bool b);
 void fmtStr(fmt_t *fmt, str_t str);
 void fmtChar(fmt_t *fmt, utf8_char_t c);
 void fmtNum(fmt_t *fmt, int64_t n);

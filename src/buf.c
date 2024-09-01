@@ -1,6 +1,8 @@
 #include "std.h"
 
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 void bufClear(buf_t *buf) {
   buf->len = 0;

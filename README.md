@@ -128,7 +128,7 @@ string splitting, reading lines out of a buffer, etc).
         /* ...can now do something with the token... */
     }
 
-One design note when building the iterato API is that I've found it's
+One design note when building the iterator API is that I've found it's
 helpful to always include the trailing character. It's a one-liner to
 remove it (`strDropSuffix(iterStr(it), ...)`), it makes the
 implementation much clearer, and it satisfies both styles of iteration
@@ -238,3 +238,6 @@ I'm putting more function signatures in header files than I have implemented;
 I'm using this "declare but don't implement" to jot down ideas about missing
 functionality without getting into the weeds.
 
+General cleanup
+* unify naming
+* remove #include's from std.h

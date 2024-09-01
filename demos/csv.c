@@ -18,16 +18,15 @@ typedef struct {
     bool print_nicely;  /* Don't use quotes in output formatting */
     bool run_tests;
 
+    /* User-specified list of which columns of the CSV print */
     struct {
-        int from, to;          /* 1-based index of columns to print */
+        int from, to;
     } col_defns[MAX_COL_DEFNS];
 
     size num_col_defns;
     
     size files_idx;   /* index into argc where the file list begins */
 } config_t;
-
-bool parseColumnDefinitions(config_t *conf, str_t columns);
 
 void printUsage(opts_config_t conf) {
     optPrintUsage(conf, "csv",
@@ -43,6 +42,8 @@ void printUsage(opts_config_t conf) {
         "* csv -c1,1,5-8,1 test.csv # duplicate column 1 several times"
     );
 }
+
+bool parseColumnDefinitions(config_t *conf, str_t columns);
 
 config_t getConfig(int argc, char **argv) {
     
@@ -240,9 +241,14 @@ void printColumn(print_t out, str_t col, bool nice, str_t iquot, str_t oquot);
 
 void processCsvHeader(reader_t rdr, str_t *columns, config_t conf) {
     if (readToByte(&rdr, '\n')) {
-         // TODO: support a --dos option would to encode the suffix as a \r\n or something
         str_t line = strDropSuffix(readStr(rdr), strC("\n"));
-        // line = strDropSuffix(line, strC("\r")); // Maybe? Don't love it :/
+
+        /*
+          OK, I don't love this, but I also don't want to specify
+          --dos or something on the commandline... :/
+         */
+        line = strDropSuffix(line, strC("\r"));
+        
         if (strBytesLen(line) == rdr.buffer->cap) {
             die("Need to resize the buffer I think");
         }

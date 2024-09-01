@@ -29,7 +29,7 @@ static inline void _advance(print_t out, iter_t *it) {
     }
 }
 
-void fmtNew(fmt_t *fmt, char *pattern) {
+void fmtStart(fmt_t *fmt, char *pattern) {
     iter_t it = iterFromStr(strFromC(pattern));
     _advance(fmt->out, &it);
     fmt->it = it;

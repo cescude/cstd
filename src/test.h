@@ -5,8 +5,8 @@ typedef struct {
 } test_t;
 
 typedef struct {
-  char *name;
   void (*fn)(test_t *);
+  char *name;
 } test_defn_t;
 
 #define assertTrue(t, bln, desc) if (bln) testPass(t); else testFail(t, desc)

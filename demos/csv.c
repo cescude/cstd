@@ -244,7 +244,7 @@ void processCsvHeader(reader_t rdr, str_t *columns, config_t conf) {
         str_t line = strDropSuffix(readStr(rdr), strC("\n"));
         // line = strDropSuffix(line, strC("\r")); // Maybe? Don't love it :/
         if (strBytesLen(line) == rdr.buffer->cap) {
-            die(strC("Need to resize the buffer I think"));
+            die("Need to resize the buffer I think");
         }
 
         size num_columns = parseColumns(line, columns, conf.inp_quot, conf.inp_sep);
@@ -261,7 +261,7 @@ void processCsvHeader(reader_t rdr, str_t *columns, config_t conf) {
 }
 
 void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
-    assert(conf.num_col_defns > 0, strC("Please don't call this without any column definitions!"));
+    assert(conf.num_col_defns > 0, "Please don't call this without any column definitions!");
 
     bool easy_print = strEquals(conf.inp_quot, conf.out_quot) && !conf.print_nicely;
     
@@ -275,7 +275,7 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
         line = strDropSuffix(line, strC("\r"));
         
         if (strBytesLen(line) == rdr.buffer->cap) {
-            die(strC("Need to resize the buffer I think"));
+            die("Need to resize the buffer I think");
         }
 
         size num_columns = parseColumns(line, columns, conf.inp_quot, conf.inp_sep);
@@ -325,7 +325,7 @@ void printColumn(print_t out, str_t col, bool nice, str_t iquot, str_t oquot) {
     bool print_tail_quote = 0;
     
     if (strStartsWith(col, iquot)) {
-        assert(strEndsWith(col, iquot), strC("String should start AND end with a quote!"));
+        assert(strEndsWith(col, iquot), "String should start AND end with a quote!");
 
         /* Drop the prefix & suffix */
         col.beg += strBytesLen(iquot);
@@ -416,7 +416,7 @@ str_t takeUnQuotedColumn(str_t line, str_t sep) {
 }
 
 str_t takeQuotedColumn(str_t line, str_t quot, str_t sep) {
-    assert(strStartsWith(line, quot), strC("Scanned line doesn't start with a quote"));
+    assert(strStartsWith(line, quot), "Scanned line doesn't start with a quote");
     
     str_t cursor = (str_t){
         .beg = line.beg + strBytesLen(quot),
@@ -442,7 +442,7 @@ str_t takeQuotedColumn(str_t line, str_t quot, str_t sep) {
         }
     }
 
-    assert(false, strC("Unreachable"));
+    assert(false, "Unreachable");
 }
 
 void test_parseColumnDefinitions_shouldParseValidPatterns(test_t *t) {
@@ -545,11 +545,11 @@ void test_printColumn(test_t *t) {
 
 int runTests() {
     test_defn_t tests[] = {
-        {"parseColumnDefinitions should parse valid patterns", test_parseColumnDefinitions_shouldParseValidPatterns},
-        {"parseColumnDefinitions should not parse invalid patterns", test_parseColumnDefinitions_shouldNotParseInvalidPatterns},
-        {"takeQuotedColumn should parse middle columns", test_takeQuotedColumn_shouldParseMiddleColumns},
-        {"takeQuotedColumn should parse end columns", test_takeQuotedColumn_shouldParseEndColumns},
-        {"printColumn basic functionality", test_printColumn},
+        {test_parseColumnDefinitions_shouldParseValidPatterns, "parseColumnDefinitions should parse valid patterns"},
+        {test_parseColumnDefinitions_shouldNotParseInvalidPatterns, "parseColumnDefinitions should not parse invalid patterns"},
+        {test_takeQuotedColumn_shouldParseMiddleColumns, "takeQuotedColumn should parse middle columns"},
+        {test_takeQuotedColumn_shouldParseEndColumns, "takeQuotedColumn should parse end columns"},
+        {test_printColumn, "printColumn basic functionality"},
     };
 
     return (int)testRunner(tests, countof(tests), true);

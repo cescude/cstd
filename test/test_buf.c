@@ -73,8 +73,8 @@ int main(int argc, char **argv) {
     }
   
     test_defn_t tests[] = {
-        {"bufAlloc should allocate into different parts of memory", test_bufAlloc_shouldAllocateWithoutClobbering},
-        {"bufAlloc should align pointers", test_bufAlloc_shouldAlignPtrs},
+        {test_bufAlloc_shouldAllocateWithoutClobbering, "bufAlloc should allocate into different parts of memory"},
+        {test_bufAlloc_shouldAlignPtrs, "bufAlloc should align pointers"},
     };
 
     return (int)testRunner(tests, countof(tests), verbose);

@@ -120,11 +120,11 @@ int main(int argc, char **argv) {
     }
   
     test_defn_t tests[] = {
-        {"iterStr should return the current selection", test_iterStr_shouldReturnTheCurrentSelection},
-        {"iterTakeToChar should iterate over a string", test_iterTakeToChar_shouldIterateOverAString},
-        {"iterTakeToAnyChar should iterate over a string", test_iterTakeToAnyChar_shouldIterateOverAString},
-        {"iterTakeToStr should iterate over a string", test_iterTakeToStr_shouldIterateOverAString},
-        {"iterTakeToByte should iterate over a string", test_iterTakeToByte_shouldIterateOverAString},
+        {test_iterStr_shouldReturnTheCurrentSelection, "iterStr should return the current selection"},
+        {test_iterTakeToChar_shouldIterateOverAString, "iterTakeToChar should iterate over a string"},
+        {test_iterTakeToAnyChar_shouldIterateOverAString, "iterTakeToAnyChar should iterate over a string"},
+        {test_iterTakeToStr_shouldIterateOverAString, "iterTakeToStr should iterate over a string"},
+        {test_iterTakeToByte_shouldIterateOverAString, "iterTakeToByte should iterate over a string"},
     };
 
     return (int)testRunner(tests, countof(tests), verbose);

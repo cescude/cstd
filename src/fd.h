@@ -13,8 +13,10 @@
 bool fdReadIntoBuf(int fd, buf_t *buf);
 str_t fdMemMap(int fd);
 
+#define fdOpenReadOnly(file,fd) fdOpen(file, fd, O_RDONLY)
+
 bool fdOpen(str_t filename, int *fd_out, int flags);
-int fdCLose(int fd);
+int fdClose(int fd);
 
 bool fdFlush(int fd, buf_t *buf);
 bool fdPrintStr(int fd, buf_t *buf, str_t s);

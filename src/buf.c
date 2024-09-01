@@ -20,7 +20,7 @@ void bufDropBytes(buf_t *buf, size sz) {
   buf->len -= sz;
 }
 
-str_t bufAppendBytes(buf_t *bufp, str_t str) {
+bytes_t bufAppendBytes(buf_t *bufp, bytes_t str) {
   size str_len = str.end - str.beg;
   
   buf_t b = *bufp;

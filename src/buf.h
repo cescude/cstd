@@ -39,7 +39,7 @@ void bufDropTo(buf_t *buf, char *ptr);
   The second version is utf8 aware and won't copy a partial character
   into buf.
 */
-str_t bufAppendBytes(buf_t *buf, str_t str); // TODO: move to bytes 
+bytes_t bufAppendBytes(buf_t *buf, bytes_t str); // TODO: move to bytes 
 str_t bufAppendStr(buf_t *buf, str_t str);
 
 /*

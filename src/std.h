@@ -57,6 +57,6 @@ typedef struct {
 #include "fmt.h"
 #include "opt.h"
 
-void die(str_t msg);
-void assert(bool t, str_t fail_msg);
+void die(char *msg);
+void assert(bool t, char *fail_msg);
 void errlog(str_t msg);

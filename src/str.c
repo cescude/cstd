@@ -98,22 +98,23 @@ utf8_char_t strFirstChar(str_t s) {
 }
 
 str_t strFirstLine(str_t src) {
-  return strTakeToChar(src, utf8CharFromC('\n'));
+  return strTakeToByte(src, '\n');
 }
 
 str_t strTakeToChar(str_t src, utf8_char_t c) {
-  str_t cursor = src;
+    str_t cursor = src;
 
-  do {
-    if (utf8CharEquals(utf8FirstChar(cursor), c)) {
-      break;
-    }
-  } while (strNextChar(&cursor));
+    do {
+        if (utf8CharEquals(utf8FirstChar(cursor), c)) {
+            strNextChar(&cursor);
+            break;
+        }
+    } while (strNextChar(&cursor));
   
-  return (str_t){
-    .beg = src.beg,
-    .end = cursor.beg
-  };
+    return (str_t){
+        .beg = src.beg,
+        .end = cursor.beg
+    };
 }
 
 str_t strTakeToByte(str_t src, char c) {

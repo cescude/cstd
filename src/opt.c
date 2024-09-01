@@ -292,7 +292,7 @@ void printWrappedParagraph(str_t prefix, size cols, str_t para) {
 void optPrintSection(opts_config_t config, char *section_name, char *section_desc) {
     fmt_t fmt = fmtInit(out);
     
-    fmtNew(&fmt, "{}\n\n");
+    fmtStart(&fmt, "{}\n\n");
     fmtStr(&fmt, strFromC(section_name));
 
     printWrappedParagraph(strC("  "), config.help_width, strFromC(section_desc));
@@ -302,7 +302,7 @@ void optPrintSection(opts_config_t config, char *section_name, char *section_des
 void optPrintArguments(opts_config_t config) {
     fmt_t fmt = fmtInit(out);
 
-    fmtNew(&fmt, "Arguments:\n\n");
+    fmtStart(&fmt, "Arguments:\n\n");
 
     opt_t *opts = config.opts;
     size num_opts = config.num_opts;
@@ -310,7 +310,7 @@ void optPrintArguments(opts_config_t config) {
     for (size i=0; i<num_opts; i++) {
         if (opts[i].type == optposarg) {
             if (strNonEmpty(opts[i].arg_label)) {
-                fmtNew(&fmt, "  {}\n");
+                fmtStart(&fmt, "  {}\n");
                 fmtStr(&fmt, opts[i].arg_label);
 
                 /*
@@ -332,7 +332,7 @@ void optPrintArguments(opts_config_t config) {
         opt_t opt = config.opts[idx];
 
         if (strNonEmpty(opt.arg_label)) {
-            fmtNew(&fmt, "  {}...\n");
+            fmtStart(&fmt, "  {}...\n");
             fmtStr(&fmt, opt.arg_label);
 
             /*
@@ -354,7 +354,7 @@ void optPrintArguments(opts_config_t config) {
 void optPrintOptions(opts_config_t config) {
     fmt_t fmt = fmtInit(out);
 
-    fmtNew(&fmt, "Options:\n\n");
+    fmtStart(&fmt, "Options:\n\n");
 
     for (size idx=0; idx<config.num_opts; idx++) {
         opt_t opt = config.opts[idx];
@@ -365,14 +365,14 @@ void optPrintOptions(opts_config_t config) {
             int has_label = strNonEmpty(opt.arg_label);
 
             switch (has_short | has_long | has_label) {
-            case 0x7: fmtNew(&fmt, "  -{}, --{}={}\n"); break;
-            case 0x6: fmtNew(&fmt, "  -{}, --{}\n"); break;
-            case 0x5: fmtNew(&fmt, "  -{}={}\n"); break;
-            case 0x4: fmtNew(&fmt, "  -{}\n"); break;
-            case 0x3: fmtNew(&fmt, "     --{}={}\n"); break;
-            case 0x2: fmtNew(&fmt, "     --{}\n"); break;
+            case 0x7: fmtStart(&fmt, "  -{}, --{}={}\n"); break;
+            case 0x6: fmtStart(&fmt, "  -{}, --{}\n"); break;
+            case 0x5: fmtStart(&fmt, "  -{}={}\n"); break;
+            case 0x4: fmtStart(&fmt, "  -{}\n"); break;
+            case 0x3: fmtStart(&fmt, "     --{}={}\n"); break;
+            case 0x2: fmtStart(&fmt, "     --{}\n"); break;
             default:
-                assert(false, strC("Invalid options passed, needs a name!"));
+                assert(false, "Invalid options passed, needs a name!"); /* TODO: put this in the initializer :/ */
             }
 
             if (has_short) fmtChar(&fmt, opt.short_name);
@@ -404,7 +404,7 @@ void optPrintUsage(opts_config_t config, char *prog_name, char *summary) {
         }
     }
 
-    fmtNew(&fmt, "Usage: {}");
+    fmtStart(&fmt, "Usage: {}");
     fmtStr(&fmt, strFromC(prog_name));
 
     if (has_options) {
@@ -413,7 +413,7 @@ void optPrintUsage(opts_config_t config, char *prog_name, char *summary) {
 
     for (size i=0; i<config.num_opts; i++) {
         if (config.opts[i].type == optposarg) {
-            fmtNew(&fmt, " {}");
+            fmtStart(&fmt, " {}");
             fmtStr(&fmt, strIsEmpty(config.opts[i].arg_label)
                    ? strC("<arg>")
                    : config.opts[i].arg_label
@@ -422,7 +422,7 @@ void optPrintUsage(opts_config_t config, char *prog_name, char *summary) {
     }
     
     if (rest_idx < config.num_opts) {
-        fmtNew(&fmt, " [{}]...");
+        fmtStart(&fmt, " [{}]...");
         fmtStr(
             &fmt,
             strIsEmpty(config.opts[rest_idx].arg_label)

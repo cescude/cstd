@@ -119,9 +119,9 @@ int main(int argc, char **argv) {
     }
   
     test_defn_t tests[] = {
-        {"readToStr should handle buffering", test_readToStr_shouldHandleBuffering},
-        {"readToStr should handle truncated scans", test_readToStr_shouldHandleTruncatedScans},
-        {"readToAnyChar should handle buffering", test_readToAnyChar_shouldHandleBuffering},
+        {test_readToStr_shouldHandleBuffering, "readToStr should handle buffering"},
+        {test_readToStr_shouldHandleTruncatedScans, "readToStr should handle truncated scans"},
+        {test_readToAnyChar_shouldHandleBuffering, "readToAnyChar should handle buffering"},
     };
 
     return (int)testRunner(tests, countof(tests), verbose);

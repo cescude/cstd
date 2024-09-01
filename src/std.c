@@ -7,12 +7,12 @@
 #include <string.h>
 #include <sys/mman.h>
 
-void die(str_t msg) {
-    errlog(msg);
+void die(char *msg) {
+    errlog(strFromC(msg));
     exit(99);
 }
 
-void assert(bool test, str_t fail_msg) {
+void assert(bool test, char *fail_msg) {
     if (!test) {
         die(fail_msg);
     }

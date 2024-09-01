@@ -49,9 +49,9 @@ int main(int argc, char **argv) {
 
     fmt_t fmt = fmtToFile(1);
 
-    fmtNew(&fmt,
-           "verbose={}, energy={}, filename={}, s={}, "
-           "columns={}, text={}, help={}, <name>={}, <nick>={}\n");
+    fmtStart(&fmt,
+             "verbose={}, energy={}, filename={}, s={}, "
+             "columns={}, text={}, help={}, <name>={}, <nick>={}\n");
     fmtNum(&fmt, verbose);
     fmtNum(&fmt, energy);
     fmtStr(&fmt, filename);
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     fmtStr(&fmt, nickname);
 
     for (size i=rest_idx; i<argc; i++) {
-        fmtNew(&fmt, " EXTRA={}!\n");
+        fmtStart(&fmt, " EXTRA={}!\n");
         fmtStr(&fmt, strFromC(argv[i]));
     }
 

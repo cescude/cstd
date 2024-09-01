@@ -3,12 +3,12 @@
 
 #include "../src/std.h"
 
-void test_fmtNew(test_t *t) {
+void test_fmtStart(test_t *t) {
     char data[100] = {0};
     buf_t buf = bufFromC(data);
     fmt_t fmt = fmtToBuffer(&buf);
 
-    fmtNew(&fmt, "We'll print {} a few times, perhaps {} times!\n");
+    fmtStart(&fmt, "We'll print {} a few times, perhaps {} times!\n");
     fmtStr(&fmt, strC("this"));
     fmtNum(&fmt, 99);
 
@@ -43,7 +43,7 @@ void test_shouldReplaceHoles(test_t *t) {
     for (size i=0; i<countof(cases); i++) {
         bufClear(&buf);
         
-        fmtNew(&fmt, cases[i].pat);
+        fmtStart(&fmt, cases[i].pat);
 
         iter_t it = iterFromStr(cases[i].toks);
         while (iterTakeToByte(&it, ',')) {
@@ -78,8 +78,8 @@ int main(int argc, char **argv) {
     }
   
     test_defn_t tests[] = {
-        {"fmtNew basic usage", test_fmtNew},
-        {"Formatting should replace holes", test_shouldReplaceHoles},
+        {test_fmtStart, "fmtStart basic usage"},
+        {test_shouldReplaceHoles, "Formatting should replace holes"},
     };
 
     return (int)testRunner(tests, countof(tests), verbose);

@@ -252,20 +252,20 @@ int main(int argc, char **argv) {
     }
   
     test_defn_t tests[] = {
-        {"strLen should return zero", test_strLen_shouldReturnZero},
-        {"strLen should count utf8 characters", test_strLen_shouldCountUtf8Characters},
-        {"strIsEmpty should function appropriately", test_strIsEmpty_shouldFunctionAppropriately},
-        {"strEquals should return true on same bytes", test_strEquals_shouldReturnTrue},
-        {"strEquals should return false on different bytes", test_strEquals_shouldReturnFalse},
-        {"strEquals should handle overlapping memory", test_strEquals_shouldHandleOverlappingMemory},
-        {"strStartsWith should return 1 when prefixed", test_strStartsWith_shouldReturn1WhenPrefixed},
-        {"strDropChars should drop the specified # of characters", test_strDropChars_shouldDropChars},
-        {"strTrimLeft basic functionality", test_strTrimLeft_basicFunctionality},
-        {"strTrimRight Basic functionality", test_strTrimRight_basicFunctionality},
-        {"strTakeLineWrapped Should return full text for short rows", test_strTakeLineWrapped_shouldReturnFullTextForShortRows},
-        {"strTakeLineWrapped Should return rows no longer than cols", test_strTakeLineWrapped_shouldReturnRowsNoLongerThanCols},
-        {"strTakeLineWrapped Should break on a space", test_strTakeLineWrapped_shouldBreakOnASpace},
-        {"utf8CharEquals Basic functionality", test_utf8CharEquals_shouldMatchSameCharacter},
+        {test_strLen_shouldReturnZero, "strLen should return zero"},
+        {test_strLen_shouldCountUtf8Characters, "strLen should count utf8 characters"},
+        {test_strIsEmpty_shouldFunctionAppropriately, "strIsEmpty should function appropriately"},
+        {test_strEquals_shouldReturnTrue, "strEquals should return true on same bytes"},
+        {test_strEquals_shouldReturnFalse, "strEquals should return false on different bytes"},
+        {test_strEquals_shouldHandleOverlappingMemory, "strEquals should handle overlapping memory"},
+        {test_strStartsWith_shouldReturn1WhenPrefixed, "strStartsWith should return 1 when prefixed"},
+        {test_strDropChars_shouldDropChars, "strDropChars should drop the specified # of characters"},
+        {test_strTrimLeft_basicFunctionality, "strTrimLeft basic functionality"},
+        {test_strTrimRight_basicFunctionality, "strTrimRight Basic functionality"},
+        {test_strTakeLineWrapped_shouldReturnFullTextForShortRows, "strTakeLineWrapped Should return full text for short rows"},
+        {test_strTakeLineWrapped_shouldReturnRowsNoLongerThanCols, "strTakeLineWrapped Should return rows no longer than cols"},
+        {test_strTakeLineWrapped_shouldBreakOnASpace, "strTakeLineWrapped Should break on a space"},
+        {test_utf8CharEquals_shouldMatchSameCharacter, "utf8CharEquals Basic functionality"},
     };
 
     return (int)testRunner(tests, countof(tests), verbose);

@@ -2,10 +2,18 @@
 
 #include <stdlib.h>
 
+#include <signal.h>
+
 #define MAX_COL_DEFNS 100
 #define MAX_COLUMNS 1000
-#define BUFFER_SIZE (4<<20)     /* Bytes used for the input buffer, needs to be able to hold a full row */
-#define OUT_BUFFER_SIZE (4<<20)
+
+/* At 4MB, our program is very fast */
+/* #define BUFFER_SIZE (4<<20)     /\* Bytes used for the input buffer, needs to be able to hold a full row *\/ */
+/* #define OUT_BUFFER_SIZE (4<<20) */
+
+/* ...at 4KB, our program is very responsive :^) */
+#define BUFFER_SIZE (4<<10)
+#define OUT_BUFFER_SIZE (4<<10)
 
 typedef struct {
     str_t inp_sep;
@@ -213,10 +221,19 @@ byte write_bytes[OUT_BUFFER_SIZE] = {0};
 buf_t write_buf = bufFromC(write_bytes);
 print_t out = printInit(1, &write_buf);
 
+void resetColorsOnExit(int sig) {
+    printC(printInitUnbuffered(1), "\x1b[39m");
+    exit(0);
+}
+
 int main(int argc, char **argv) {
     config_t conf = getConfig(argc, argv);
     if (conf.run_tests) {
         exit(runTests() > 0);
+    }
+
+    if (conf.colorize) {
+        signal(SIGINT, resetColorsOnExit);
     }
     
     for (size i=conf.files_idx; i<argc; i++) {
@@ -347,7 +364,7 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
         }
 
         if (conf.colorize) {
-            printC(out, "\x1b[39m"); /* TODO: set a signal handler to reset the terminal */
+            printC(out, "\x1b[39m");
         }
         printStr(out, strC("\n"));
     }

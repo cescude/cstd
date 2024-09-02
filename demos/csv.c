@@ -366,6 +366,7 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
         if (conf.colorize) {
             printC(out, "\x1b[39m");
         }
+
         printStr(out, strC("\n"));
     }
 

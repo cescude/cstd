@@ -10,6 +10,16 @@ typedef struct {
 reader_t readInit(int fd, buf_t *buf);
 
 /*
+  TODO:
+  
+  Would be nice if this could detect that `fd` is mmap'able & do that
+  instead. However, would need to make *buffer NOT a pointer, which I
+  guess we should do regardless?
+*/
+reader_t readFromFile(str_t filename, buf_t *buf);
+reader_t readFromFileHandle(int fd, buf_t *buf);
+
+/*
   These advance the current iterator, filling unused data from the
   file as needed.
 */

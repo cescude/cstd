@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-g3 -Wall -Wextra -Wconversion -Wdouble-promotion -Wno-unused-parameter -Wno-unused-function -Wno-sign-conversion -fsanitize=undefined -fsanitize-trap
 #CFLAGS=-O3
 
-all: TAGS libstd.a opt_demo reader_demo csv test_str test_buf test_iter test_reader test_fmt test_opt
+all: TAGS libstd.a opt_demo reader_demo csv color_table test_str test_buf test_iter test_reader test_fmt test_opt
 
 TAGS: src/*.c src/*.h demos/*.c test/*.c
 	find . -type f -name '*.[ch]' | etags -
@@ -85,3 +85,6 @@ reader_demo: libstd.a demos/reader_demo.c
 
 csv: libstd.a demos/csv.c
 	${CC} ${CFLAGS} -o csv demos/csv.c -L. -lstd
+
+color_table: libstd.a demos/color_table.c
+	${CC} ${CFLAGS} -o color_table demos/color_table.c -L. -lstd

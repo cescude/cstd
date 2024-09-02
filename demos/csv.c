@@ -29,17 +29,29 @@ typedef struct {
 } config_t;
 
 void printUsage(opts_config_t conf) {
-    optPrintUsage(conf, "csv",
-                  "Process one or more csv files. If no options are "
-                  "specified, print the column list derived from "
-                  "the header.");
-    optPrintSection(conf,
+    optPrintUsage(
+        conf, "csv",
+        "Process one or more csv files. If no options are "
+        "specified, print the column list derived from "
+        "the header."
+    );
+    optPrintSection(
+        conf,
         "Examples:",
         "* csv test.csv # print header list from test.csv\n"
         "* csv -c1,2,9 test.csv # print columns 1,2,9\n"
         "* csv -c1,5-9 test.csv # print columns 1, and 5-9\n"
         "* csv -c9,1-8 test.csv # put column 9 in front\n"
-        "* csv -c1,1,5-8,1 test.csv # duplicate column 1 several times"
+        "* csv -c1,1,5-8,1 test.csv # duplicate column 1 several times\n"
+        "\n"
+        "Sometimes it's helpful to pipe the results to other programs, "
+        "the following patterns are ones I find useful.\n"
+        "\n"
+        "Align output into columns for ease of reading:\n"
+        "* csv -c1- -F% test.csv | column -ts%\n"
+        "\n"
+        "Use awk to filter on particular columns:\n"
+        "* csv -c1- -F% test.csv | awk -F% '$3==\"ok\"'"
     );
 }
 
@@ -160,7 +172,7 @@ bool parseColumnDefinitions(config_t *result, str_t columns) {
             if (strIsEmpty(num_str)) {
                 /*
                   A single number followed by a dash, eg. "10-". So
-                  we're printing a range, from to->rest of columns.
+                  we're defining a range, [from, MAX_COLUMNS)
                 */
                 to = MAX_COLUMNS;
             } else if (!strMaybeParseInt(num_str, &to)) {
@@ -287,6 +299,13 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
         size num_columns = parseColumns(line, columns, conf.inp_quot, conf.inp_sep);
         if (num_columns < 1) continue;
 
+        size current_color = 0;
+        if (conf.colorize) {
+            printC(out, "\x1b[3");
+            printNum(out, current_color++%8);
+            printC(out, "m");
+        }
+        
         printColumn(
             out,
             columns[conf.col_defns[0].from],
@@ -309,6 +328,12 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
             for (size j = from + (i==0); j<to && j<num_columns; j++) {
                 printStr(out, conf.out_sep);
 
+                if (conf.colorize) {
+                    printC(out, "\x1b[3");
+                    printNum(out, current_color++%8);
+                    printC(out, "m");
+                }
+        
                 if (easy_print) {
                     /*
                       We don't need to do any quote transformations in
@@ -321,6 +346,9 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
             }
         }
 
+        if (conf.colorize) {
+            printC(out, "\x1b[39m"); /* TODO: set a signal handler to reset the terminal */
+        }
         printStr(out, strC("\n"));
     }
 

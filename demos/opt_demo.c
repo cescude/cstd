@@ -44,6 +44,12 @@ int main(int argc, char **argv) {
             "A command-line tool for demoing the opt-parsing aspect and "
             "functionality 😅 contained in this non-standard library."
         );
+        optPrintSection(
+            config,
+            "A quick note",
+            "You can add additional sections of information, providing examples, "
+            "caveats, notes, jokes, whatever."
+        );
         exit(show_help ? 0 : 99);
     }
 

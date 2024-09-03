@@ -259,10 +259,10 @@ bool optParse(opts_config_t config, int num_args, char **args) {
 
         if (opts[i].type == optposarg) {
             /*
-              OK, we need a positional argument; if we've run out, it's
-              a problem!
+              OK, we need a positional but ran out of args, break so
+              we can set the "rest" (if needed)
             */
-            if (idx >= num_args) return 0;
+            if (idx >= num_args) break;
           
             *opts[i].ptr.s = strFromC(args[idx]);
             idx++;

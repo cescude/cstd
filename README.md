@@ -18,6 +18,10 @@ Some goals:
 * Don't design an API for infinite memory
 * User code doesn't need libc as a matter of course
 
+Even though I'm still experimenting w/ the APIs, I'm particularly
+proud of the simplicity and flexibility provided by the formatting &
+argument-parsing sections.
+
 ## Utilities
 
 Defines the following things which are generally helpful:
@@ -187,21 +191,20 @@ style formatting?
 
     fmt_t fmt = fmtToFile(1); /* stdout, unbuffered */
 
-    fmtStart(&fmt, "power={}, coins={}, helpful_message={}\n");
-    fmtNum(&fmt, 100);
-    fmtNum(&fmt, 30);
-    fmtStr(&fmt, strC("You've got this"));
+    fmtStart(&fmt, "power={}, coins={}, helpful_message={}\n"); // prints "power="
+    fmtNum(&fmt, 100);                                          // prints "100, coins="
+    fmtNum(&fmt, 30);                                           // prints "30, helpful_message="
+    fmtStr(&fmt, strC("You've got this"));                      // prints "You've got this\n"
 
-    fmtStart(&fmt, "What do {}?\n");
-    fmtStr(&fmt, strC("you think"));
+    fmtStart(&fmt, "What do {}?\n");                            // prints "What do "
+    fmtStr(&fmt, strC("you think"));                            // prints "you think?\n"
 
 Notice the typechecking etc happens at parameter declaration, and so
 there's no real need for extra compiler magic or macros to introspect
 parameters.
 
 A function `fmtSkip(fmt_t*)` is provided so you can write your own
-formatting functions, allowing you to inject your own printers without
-needing to extend the pattern syntax:
+formatting functions without needing to extend the pattern syntax:
 
     fmtStart(&fmt, "Hey {}, what about {}!\n");
     fmtStr(&fmt, strC("there"));
@@ -210,7 +213,7 @@ needing to extend the pattern syntax:
     printC(fmt.out, "this or...");
     printC(fmt.out, "that?");
 
-    // Tell the formatter to either skip to the next hole or wrap things up
+    // Tell the formatter to either skip this hole (since we did our own printing)
     fmtSkip(&fmt);
 
 This works because the fmt functions print everything up to the next

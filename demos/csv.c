@@ -216,7 +216,6 @@ bool parseColumnDefinitions(config_t *result, str_t columns) {
 
 str_t columns[MAX_COLUMNS] = {0};
 byte read_bytes[BUFFER_SIZE] = {0};
-buf_t read_buf = bufFromC(read_bytes);
 
 byte write_bytes[OUT_BUFFER_SIZE] = {0};
 buf_t write_buf = bufFromC(write_bytes);
@@ -260,14 +259,14 @@ int main(int argc, char **argv) {
     for (size i=conf.files_idx; i<argc; i++) {
         int fd;
         if (fdOpenReadOnly(strFromC(argv[i]), &fd)) {
-            reader_t rdr = readInit(fd, &read_buf);
+            reader_t rdr = readInit(fd, bufFromC(read_bytes));
             processCsv(rdr, columns, conf);
             fdClose(fd);
         }
     }
 
     if (conf.files_idx == argc) {
-        reader_t rdr = readInit(0, &read_buf);
+        reader_t rdr = readInit(0, bufFromC(read_bytes));
         processCsv(rdr, columns, conf);
     }
     
@@ -299,7 +298,7 @@ void processCsvHeader(reader_t rdr, str_t *columns, config_t conf) {
          */
         line = strDropSuffix(line, strC("\r"));
         
-        if (strBytesLen(line) == rdr.buffer->cap) {
+        if (strBytesLen(line) == rdr.buffer.cap) {
             die("Need to resize the buffer I think");
         }
 
@@ -331,7 +330,7 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
          */
         line = strDropSuffix(line, strC("\r"));
         
-        if (strBytesLen(line) == rdr.buffer->cap) {
+        if (strBytesLen(line) == rdr.buffer.cap) {
             die("Need to resize the buffer I think");
         }
 

@@ -31,7 +31,7 @@ void test_readToStr_shouldHandleBuffering(test_t *t) {
 
         char read_data[16] = {0};
         buf_t read_buf = bufFromC(read_data);
-        reader_t rdr = readInit(r, &read_buf);
+        reader_t rdr = readInit(r, read_buf);
     
         size segments = 0;
         while (readToStr(&rdr, cases[i].sep)) {
@@ -59,7 +59,7 @@ void test_readToStr_shouldHandleTruncatedScans(test_t *t) {
 
         char read_data[16] = {0};
         buf_t read_buf = bufFromC(read_data);
-        reader_t rdr = readInit(r, &read_buf);
+        reader_t rdr = readInit(r, read_buf);
 
         size segments = 0;
         while (readToStr(&rdr, cases[i].sep)) {
@@ -88,8 +88,7 @@ void test_readToAnyChar_shouldHandleBuffering(test_t *t) {
         close(w);
 
         char read_data[16] = {0};
-        buf_t read_buf = bufFromC(read_data);
-        reader_t rdr = readInit(r, &read_buf);
+        reader_t rdr = readInit(r, bufFromC(read_data));
     
         size segments = 0;
         while (readToAnyChar(&rdr, cases[i].chars)) {

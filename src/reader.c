@@ -1,6 +1,6 @@
 #include "std.h"
 
-reader_t readInit(int fd, buf_t *buf) {
+reader_t readInit(int fd, buf_t buf) {
     return (reader_t){
         .fd = fd,
         .it = (iter_t){0},
@@ -10,8 +10,8 @@ reader_t readInit(int fd, buf_t *buf) {
 
 bool readWasTruncated(reader_t reader) {
     return
-        reader.buffer->ptr == reader.it.beg &&
-        reader.buffer->len == (reader.it.end - reader.it.beg);
+        reader.buffer.ptr == reader.it.beg &&
+        reader.buffer.len == (reader.it.end - reader.it.beg);
 }
 
 str_t readStr(reader_t reader) {
@@ -20,7 +20,7 @@ str_t readStr(reader_t reader) {
 
 bool readToStr(reader_t *reader, str_t separator) {
     int fd = reader->fd;
-    buf_t buf = *reader->buffer;
+    buf_t buf = reader->buffer;
     iter_t it = reader->it;
 
     bool has_token = iterTakeToStr(&it, separator);
@@ -44,7 +44,7 @@ bool readToStr(reader_t *reader, str_t separator) {
     }
 
     reader->it = it;
-    *reader->buffer = buf;
+    reader->buffer = buf;
 
     if (iterDone(it)) {
         return 0;
@@ -55,7 +55,7 @@ bool readToStr(reader_t *reader, str_t separator) {
 
 bool readToAnyChar(reader_t *reader, str_t chars) {
     int fd = reader->fd;
-    buf_t buf = *reader->buffer;
+    buf_t buf = reader->buffer;
     iter_t it = reader->it;
 
     bool has_token = iterTakeToAnyChar(&it, chars);
@@ -79,7 +79,7 @@ bool readToAnyChar(reader_t *reader, str_t chars) {
     }
 
     reader->it = it;
-    *reader->buffer = buf;
+    reader->buffer = buf;
 
     if (iterDone(it)) {
         return 0;
@@ -90,7 +90,7 @@ bool readToAnyChar(reader_t *reader, str_t chars) {
 
 bool readToByte(reader_t *reader, byte b) {
     int fd = reader->fd;
-    buf_t buf = *reader->buffer;
+    buf_t buf = reader->buffer;
     iter_t it = reader->it;
 
     bool has_token = iterTakeToByte(&it, b);
@@ -114,7 +114,7 @@ bool readToByte(reader_t *reader, byte b) {
     }
 
     reader->it = it;
-    *reader->buffer = buf;
+    reader->buffer = buf;
 
     if (iterDone(it)) {
         return 0;

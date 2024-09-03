@@ -3,11 +3,11 @@
 typedef struct {
     int fd;
     iter_t it;
-    buf_t *buffer;
+    buf_t buffer;
 } reader_t;
 
 /* No such thing as an unbuffered reader */
-reader_t readInit(int fd, buf_t *buf);
+reader_t readInit(int fd, buf_t buf);
 
 /*
   TODO:
@@ -16,8 +16,8 @@ reader_t readInit(int fd, buf_t *buf);
   instead. However, would need to make *buffer NOT a pointer, which I
   guess we should do regardless?
 */
-reader_t readFromFile(str_t filename, buf_t *buf);
-reader_t readFromFileHandle(int fd, buf_t *buf);
+reader_t readFromFile(str_t filename, buf_t buf);
+reader_t readFromFileHandle(int fd, buf_t buf);
 
 /*
   These advance the current iterator, filling unused data from the

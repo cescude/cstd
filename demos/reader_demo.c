@@ -40,13 +40,16 @@ void printFile(print_t out, str_t filename, conf_t cnf) {
     }
 
     char read_data[1<<10] = {0};
-    buf_t read_buf = bufFromC(read_data);
-    reader_t rdr = readInit(fd, &read_buf);
+    reader_t rdr = readInit(fd, bufFromC(read_data));
 
     size n = 1;
     while (readToStr(&rdr, strC("\n"))) {
         str_t line = iterStr(rdr.it);
 
+        if (iterLast(rdr.it) && strIsEmpty(line)) {
+            continue;
+        }
+        
         if (cnf.print_line_number) {
             printNum(out, n);
             printC(out, " ");

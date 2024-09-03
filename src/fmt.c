@@ -59,3 +59,13 @@ void fmtUnm(fmt_t *fmt, uint64_t u) {
     printUnsigned(fmt->out, u);
     _advance(fmt->out, &fmt->it);
 }
+
+void fmtSkip(fmt_t *fmt) {
+    /*
+      See the patterns of the others? They're "print + advance".
+
+      Well, if you want to print & then call this function, you can
+      implement your own outputs.
+     */
+    _advance(fmt->out, &fmt->it);
+}

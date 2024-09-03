@@ -2,8 +2,6 @@
 
 #include <stdlib.h>
 
-#include <signal.h>
-
 #define MAX_COL_DEFNS 100
 #define MAX_COLUMNS 1000
 
@@ -81,10 +79,12 @@ config_t getConfig(int argc, char **argv) {
         .files_idx = argc,
     };
 
+    bool all_columns = 0;       /* shortcut for --columns=1- */
     str_t columns = {0}; /* column patterns--we'll process these into usable definitions */
     bool show_help = 0;
     
     opt_t opts[] = {
+        optBool(&all_columns, 'A', "all", "Print all columns (same as --columns=1-)"),
         optStr(&columns, 'c', "columns", "PATTERN",
                "Comma separated list of columns to print (ex. \"-c1,2,3\", "
                "\"-c1-3\", \"-c1-5,3-10\". If omitted, prints just the "
@@ -113,7 +113,11 @@ config_t getConfig(int argc, char **argv) {
         exit(0);
     }
 
-    if (!parseColumnDefinitions(&result, columns)) {
+    if (all_columns) {
+        result.col_defns[result.num_col_defns].from = 0;
+        result.col_defns[result.num_col_defns].to = MAX_COLUMNS;
+        result.num_col_defns++;
+    } else if (!parseColumnDefinitions(&result, columns)) {
         printUsage(conf);
         exit(99);
     }
@@ -210,9 +214,6 @@ bool parseColumnDefinitions(config_t *result, str_t columns) {
     return true;
 }
 
-int runTests();
-void processCsv(reader_t rdr, str_t *columns, config_t conf);
-
 str_t columns[MAX_COLUMNS] = {0};
 byte read_bytes[BUFFER_SIZE] = {0};
 buf_t read_buf = bufFromC(read_bytes);
@@ -221,10 +222,30 @@ byte write_bytes[OUT_BUFFER_SIZE] = {0};
 buf_t write_buf = bufFromC(write_bytes);
 print_t out = printInit(1, &write_buf);
 
-void resetColorsOnExit(int sig) {
-    printC(printInitUnbuffered(1), "\x1b[39m");
+void setColor(int n) {
+    printC(out, "\x1b[3");
+    printNum(out, n);
+    printC(out, "m");
+}
+
+inline void resetColor() {
+    setColor(9);
+}
+
+#include <signal.h>
+void onSigInt(int sig) {
+    /*
+      Because we don't know where the execution was when Ctrl-C was
+      pressed, we can't trust the accuracy of our write buffers. So
+      skip the buffering provided by `out` and write directly to fd=1.
+    */
+    out = printInitUnbuffered(1);
+    resetColor();
     exit(0);
 }
+
+int runTests();
+void processCsv(reader_t rdr, str_t *columns, config_t conf);
 
 int main(int argc, char **argv) {
     config_t conf = getConfig(argc, argv);
@@ -233,7 +254,7 @@ int main(int argc, char **argv) {
     }
 
     if (conf.colorize) {
-        signal(SIGINT, resetColorsOnExit);
+        signal(SIGINT, onSigInt);
     }
     
     for (size i=conf.files_idx; i<argc; i++) {
@@ -284,11 +305,12 @@ void processCsvHeader(reader_t rdr, str_t *columns, config_t conf) {
 
         size num_columns = parseColumns(line, columns, conf.inp_quot, conf.inp_sep);
 
+        fmt_t fmt = fmtInit(out);
         for (size i=0; i<num_columns; i++) {
-            printNum(out, i+1);
-            printC(out, ") ");
-            printColumn(out, columns[i], true, conf.inp_quot, conf.out_quot);
-            printC(out, "\n");
+            fmtStart(&fmt, "{}) {}\n");
+            fmtNum(&fmt, i+1);
+            printColumn(fmt.out, columns[i], true, conf.inp_quot, conf.out_quot);
+            fmtSkip(&fmt);
         }
     }
 
@@ -318,9 +340,7 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
 
         size current_color = 0;
         if (conf.colorize) {
-            printC(out, "\x1b[3");
-            printNum(out, current_color++%8);
-            printC(out, "m");
+            setColor(current_color++ % 8);
         }
         
         printColumn(
@@ -343,7 +363,16 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
               output separator.
             */
             for (size j = from + (i==0); j<to && j<num_columns; j++) {
+
+                if (conf.colorize) {
+                    resetColor();
+                }
+                
                 printStr(out, conf.out_sep);
+
+                if (conf.colorize) {
+                    setColor(current_color++ % 8);
+                }
 
                 if (conf.colorize) {
                     printC(out, "\x1b[3");
@@ -364,7 +393,7 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
         }
 
         if (conf.colorize) {
-            printC(out, "\x1b[39m");
+            resetColor();
         }
 
         printStr(out, strC("\n"));

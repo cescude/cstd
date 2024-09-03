@@ -199,6 +199,29 @@ Notice the typechecking etc happens at parameter declaration, and so
 there's no real need for extra compiler magic or macros to introspect
 parameters.
 
+A function `fmtSkip(fmt_t*)` is provided so you can write your own
+formatting functions, allowing you to inject your own printers without
+needing to extend the pattern syntax:
+
+    fmtStart(&fmt, "Hey {}, what about {}!\n");
+    fmtStr(&fmt, strC("there"));
+
+    // Anything you print here will be written at the second {}
+    printC(fmt.out, "this or...");
+    printC(fmt.out, "that?");
+
+    // Tell the formatter to either skip to the next hole or wrap things up
+    fmtSkip(&fmt);
+
+This works because the fmt functions print everything up to the next
+{} in the pattern, then return. So the previous example looks like:
+
+    fmtStart(...) => "Hey {}"
+    fmtStr(...)   => "Hey there, what about {}"
+    printC(...)   => "Hey there, what about this or...{}"
+    printC(...)   => "Hey there, what about this or...that?{}"
+    fmtSkip(...)  => "Hey there, what about this or...that?!\n"
+
 FWIW the `fmtStart` takes a char* for two reasons:
 
 * It's pretty easy (for me) to type `fmtStr(...)` by accident, and
@@ -206,10 +229,6 @@ FWIW the `fmtStart` takes a char* for two reasons:
   
 * Also don't think dynamically generating format strings is a great
   idea, so this makes it harder to do :^(
-
-TODO: Will want to create some extra *F functions, like in the `fd`
-collection, eg. something like `fmtNumF(&fmt, 10,
-(spec_t){.hex=true,.width=10})`.
 
 ## Commandline option parsing
 

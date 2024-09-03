@@ -4,6 +4,7 @@ typedef struct {
     int fd;
     iter_t it;
     buf_t buffer;
+    bool mmap;
 } reader_t;
 
 /* No such thing as an unbuffered reader */
@@ -18,6 +19,7 @@ reader_t readInit(int fd, buf_t buf);
 */
 reader_t readFromFile(str_t filename, buf_t buf);
 reader_t readFromFileHandle(int fd, buf_t buf);
+bool readReleaseFileHandle(reader_t *rdr);
 
 /*
   These advance the current iterator, filling unused data from the

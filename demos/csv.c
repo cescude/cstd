@@ -227,7 +227,7 @@ void setColor(int n) {
     printC(out, "m");
 }
 
-inline void resetColor() {
+void resetColor() {
     setColor(9);
 }
 
@@ -259,15 +259,17 @@ int main(int argc, char **argv) {
     for (size i=conf.files_idx; i<argc; i++) {
         int fd;
         if (fdOpenReadOnly(strFromC(argv[i]), &fd)) {
-            reader_t rdr = readInit(fd, bufFromC(read_bytes));
+            reader_t rdr = readFromFileHandle(fd, bufFromC(read_bytes));
             processCsv(rdr, columns, conf);
+            readReleaseFileHandle(&rdr);
             fdClose(fd);
         }
     }
 
     if (conf.files_idx == argc) {
-        reader_t rdr = readInit(0, bufFromC(read_bytes));
+        reader_t rdr = readFromFileHandle(0, bufFromC(read_bytes));
         processCsv(rdr, columns, conf);
+        readReleaseFileHandle(&rdr);
     }
     
     return 0;
@@ -337,7 +339,7 @@ void processCsvNormal(reader_t rdr, str_t *columns, config_t conf) {
         size num_columns = parseColumns(line, columns, conf.inp_quot, conf.inp_sep);
         if (num_columns < 1) continue;
 
-        size current_color = 0;
+        int current_color = 0;
         if (conf.colorize) {
             setColor(current_color++ % 8);
         }

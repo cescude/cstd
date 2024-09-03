@@ -60,8 +60,8 @@ bool fdOpen(str_t filename, int *fd_out, int flags) {
     return 1;
 }
 
-int fdClose(int fd) {
-    return close(fd);
+bool fdClose(int fd) {
+    return close(fd) == 0;
 }
     
 bool fdFlush(int fd, buf_t *bufp) {

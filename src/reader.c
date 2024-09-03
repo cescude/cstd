@@ -5,7 +5,42 @@ reader_t readInit(int fd, buf_t buf) {
         .fd = fd,
         .it = (iter_t){0},
         .buffer = buf,
+        .mmap = 0,   /* set to non-zero to indicate a mmap'ed file */
     };
+}
+
+#include <sys/mman.h>
+#include <sys/stat.h>
+
+reader_t readFromFileHandle(int fd, buf_t buf) {
+    struct stat st = {0};
+    
+    if (fstat(fd, &st) < 0) {
+        goto cannot_map;
+    }
+    
+    void *ptr = mmap(0, st.st_size, PROT_READ, MAP_PRIVATE /* | MAP_POPULATE? */, fd, 0);
+    if (ptr == MAP_FAILED) {
+        goto cannot_map;
+    }
+
+    reader_t rdr = readInit(fd, bufFromPtr(ptr, st.st_size));
+    rdr.mmap = 1;
+    rdr.buffer.len = rdr.buffer.cap;  /* buffer should be considered as all filled up */
+    rdr.it = iterFromBuf(rdr.buffer); /* we already have everything */
+    return rdr;
+
+cannot_map:
+    return readInit(fd, buf);
+}
+
+#define _isMemMapped(r) ((r)->mmap > 0)
+
+bool readReleaseFileHandle(reader_t *rdr) {
+    if (_isMemMapped(rdr)) {
+        munmap(rdr->buffer.ptr, rdr->buffer.cap);
+    }
+    return true;
 }
 
 bool readWasTruncated(reader_t reader) {
@@ -25,21 +60,26 @@ bool readToStr(reader_t *reader, str_t separator) {
 
     bool has_token = iterTakeToStr(&it, separator);
 
-    if (!has_token || iterLast(it)) {
-        if (it.beg > buf.ptr) {
-            bufDropTo(&buf, it.beg);
-        } else {
-            bufClear(&buf);
-        }
-        if (fdReadIntoBuf(fd, &buf)) {
-            it = iterFromBuf(buf);
+    /*
+      Memory mapped files don't have the potential to read more data :^(
+     */
+    if (!_isMemMapped(reader)) {
+        if (!has_token || iterLast(it)) {
+            if (it.beg > buf.ptr) {
+                bufDropTo(&buf, it.beg);
+            } else {
+                bufClear(&buf);
+            }
+            if (fdReadIntoBuf(fd, &buf)) {
+                it = iterFromBuf(buf);
 
-            /*
-              Try a second time. if the buffer still wasn't large
-              enough, we'll get a partial token.
-             */
+                /*
+                  Try a second time. if the buffer still wasn't large
+                  enough, we'll get a partial token.
+                */
             
-            iterTakeToStr(&it, separator);
+                iterTakeToStr(&it, separator);
+            }
         }
     }
 
@@ -60,21 +100,26 @@ bool readToAnyChar(reader_t *reader, str_t chars) {
 
     bool has_token = iterTakeToAnyChar(&it, chars);
 
-    if (!has_token || iterLast(it)) {
-        if (it.beg > buf.ptr) {
-            bufDropTo(&buf, it.beg);
-        } else {
-            bufClear(&buf);
-        }
-        if (fdReadIntoBuf(fd, &buf)) {
-            it = iterFromBuf(buf);
+    /*
+      Memory mapped files don't have the potential to read more data :^(
+     */
+    if (!_isMemMapped(reader)) {
+        if (!has_token || iterLast(it)) {
+            if (it.beg > buf.ptr) {
+                bufDropTo(&buf, it.beg);
+            } else {
+                bufClear(&buf);
+            }
+            if (fdReadIntoBuf(fd, &buf)) {
+                it = iterFromBuf(buf);
 
-            /*
-              Try a second time. if the buffer still wasn't large
-              enough, we'll get a partial token.
-             */
+                /*
+                  Try a second time. if the buffer still wasn't large
+                  enough, we'll get a partial token.
+                */
             
-            iterTakeToAnyChar(&it, chars);
+                iterTakeToAnyChar(&it, chars);
+            }
         }
     }
 
@@ -95,21 +140,26 @@ bool readToByte(reader_t *reader, byte b) {
 
     bool has_token = iterTakeToByte(&it, b);
 
-    if (!has_token || iterLast(it)) {
-        if (it.beg > buf.ptr) {
-            bufDropTo(&buf, it.beg);
-        } else {
-            bufClear(&buf);
-        }
-        if (fdReadIntoBuf(fd, &buf)) {
-            it = iterFromBuf(buf);
+    /*
+      Memory mapped files don't have the potential to read more data :^(
+     */
+    if (!_isMemMapped(reader)) {
+        if (!has_token || iterLast(it)) {
+            if (it.beg > buf.ptr) {
+                bufDropTo(&buf, it.beg);
+            } else {
+                bufClear(&buf);
+            }
+            if (fdReadIntoBuf(fd, &buf)) {
+                it = iterFromBuf(buf);
 
-            /*
-              Try a second time. if the buffer still wasn't large
-              enough, we'll get a partial token.
-             */
+                /*
+                  Try a second time. if the buffer still wasn't large
+                  enough, we'll get a partial token.
+                */
             
-            iterTakeToByte(&it, b);
+                iterTakeToByte(&it, b);
+            }
         }
     }
 

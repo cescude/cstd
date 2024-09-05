@@ -26,7 +26,7 @@ reader_t readFromFileHandle(int fd, buf_t buf);
   included only for completeness.
 */
 bool readMmap(reader_t *rdr);   /* returns true on success */
-bool readMunmmap(reader_t *rdr); /* returns true on success */
+bool readMunmap(reader_t *rdr); /* returns true on success */
 
 /*
   These advance the current iterator, filling unused data from the

@@ -259,17 +259,19 @@ int main(int argc, char **argv) {
     for (size i=conf.files_idx; i<argc; i++) {
         int fd;
         if (fdOpenReadOnly(strFromC(argv[i]), &fd)) {
-            reader_t rdr = readFromFileHandle(fd, bufFromC(read_bytes));
+            reader_t rdr = readInit(fd, bufFromC(read_bytes));
+            readMmap(&rdr);
             processCsv(rdr, columns, conf);
-            readReleaseFileHandle(&rdr);
+            readMunmap(&rdr);
             fdClose(fd);
         }
     }
 
     if (conf.files_idx == argc) {
-        reader_t rdr = readFromFileHandle(0, bufFromC(read_bytes));
+        reader_t rdr = readInit(0, bufFromC(read_bytes));
+        readMmap(&rdr);
         processCsv(rdr, columns, conf);
-        readReleaseFileHandle(&rdr);
+        readMunmap(&rdr);
     }
     
     return 0;

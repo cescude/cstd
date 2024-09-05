@@ -19,7 +19,14 @@ reader_t readInit(int fd, buf_t buf);
 */
 reader_t readFromFile(str_t filename, buf_t buf);
 reader_t readFromFileHandle(int fd, buf_t buf);
-bool readReleaseFileHandle(reader_t *rdr);
+
+/*
+  If the file descriptor can be mmap'd, this will do so. Their
+  "success" return values aren't super necessary to check, and so are
+  included only for completeness.
+*/
+bool readMmap(reader_t *rdr);   /* returns true on success */
+bool readMunmmap(reader_t *rdr); /* returns true on success */
 
 /*
   These advance the current iterator, filling unused data from the

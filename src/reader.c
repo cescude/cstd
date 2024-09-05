@@ -12,35 +12,36 @@ reader_t readInit(int fd, buf_t buf) {
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-reader_t readFromFileHandle(int fd, buf_t buf) {
+#define _isMemMapped(r) ((r)->mmap > 0)
+
+bool readMmap(reader_t *rdr) {
     struct stat st = {0};
     
-    if (fstat(fd, &st) < 0) {
+    if (fstat(rdr->fd, &st) < 0) {
         goto cannot_map;
     }
     
-    void *ptr = mmap(0, st.st_size, PROT_READ, MAP_PRIVATE /* | MAP_POPULATE? */, fd, 0);
+    void *ptr = mmap(0, st.st_size, PROT_READ, MAP_PRIVATE, rdr->fd, 0);
     if (ptr == MAP_FAILED) {
         goto cannot_map;
     }
 
-    reader_t rdr = readInit(fd, bufFromPtr(ptr, st.st_size));
-    rdr.mmap = 1;
-    rdr.buffer.len = rdr.buffer.cap;  /* buffer should be considered as all filled up */
-    rdr.it = iterFromBuf(rdr.buffer); /* we already have everything */
-    return rdr;
+    rdr->buffer = (buf_t){
+        .ptr = ptr,
+        .len = st.st_size, /* Data is loaded(ish), so set len to capacity */
+        .cap = st.st_size
+    };
+    rdr->mmap = 1;
+    rdr->it = iterFromBuf(rdr->buffer); /* we already have everything */
+    
+    return true;
 
 cannot_map:
-    return readInit(fd, buf);
+    return false;
 }
 
-#define _isMemMapped(r) ((r)->mmap > 0)
-
-bool readReleaseFileHandle(reader_t *rdr) {
-    if (_isMemMapped(rdr)) {
-        munmap(rdr->buffer.ptr, rdr->buffer.cap);
-    }
-    return true;
+bool readMunmap(reader_t *rdr) {
+    return _isMemMapped(rdr) && (munmap(rdr->buffer.ptr, rdr->buffer.cap) == 0);
 }
 
 bool readWasTruncated(reader_t reader) {

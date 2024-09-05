@@ -279,29 +279,26 @@ exercise more functionality.
 
 ## Scratch/notes below
 
-Note about strings vs buffers--
+Would like to add a "scanner" interface, basically the read to fmt's
+write.
 
-`str_t` is my string type, and it's a struct with a pointer to the
-beginning & end of a string. The assumption made is that this points
-to memory that is NOT owned, and that narrowing the string
-(ie. incrementing the beginning, or decrementing the end) is always a
-valid operation. Additionally, at this point, no string functions
-modify the underlying data, so it's considered a readonly view into
-memory.
+Something like:
 
-`buf_t` is my buffer type (ie., view into read/write memory), and it's
-a struct with a starting pointer, a length, and a capacity value. Like
-`str_t`, this is assumed to not own its memory, however the starting
-pointer and capacity is treated as "fixed in place" by all functions
-(ie., dropping 10 characters from a `str_t` will adjust the beginning
-pointer, wherease dropping 10 characters from a `buf_t` will move
-memory and decrement the length).
+    scan_t sc = scanInit(my_str, "Title={}, count={}\n");
+    str_t title = scanStr(&sc);
+    int count = scanNum(&sc);
+    if (scanFailed(sc)) {
+        // ...
+    }
 
-Strings and buffers are creating with backing memory, and the conceit
-here is that the API should encourage addressing memory limits as part
-of any "straightforward" usage patterns.
+Now that I think about it, why not use this pattern for the fmt thing too?
 
-    <insert example>
+    fmt_t fmt = fmtToFile(1, "verbose={}, energy={}!\n");
+    fmtBool(&fmt, verbose);
+    fmtInt(&fmt, energy);
+    if (fmtFailed(fmt)) {
+       // ...
+    }
 
 ## TODO
 
